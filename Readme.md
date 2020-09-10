@@ -13,15 +13,15 @@
 拉取镜像
 
 ```
-docker pull 10.0.81.34/arl/arl_worker:v2
+docker pull tophant/arl
 ```
 
 修改`docker/docker-compose.yml` 中services web image 和 services worker image 对应的镜像地址。
 
 
 ```
-git clone git@git.tophant.com:TCC/ARLv2.git
-cd ARLv2/docker/
+git clone https://github.com/TophantTechnology/ARL
+cd ARL/docker/
 docker-compose up -d 
 ```
 
