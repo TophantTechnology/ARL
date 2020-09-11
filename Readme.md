@@ -1,4 +1,4 @@
-## ARL（Asset Reconnaissance Lighthouse）资产侦察灯塔系统
+## ARL(Asset Reconnaissance Lighthouse)资产侦察灯塔系统
 
 资产灯塔，不仅仅是域名收集
 
