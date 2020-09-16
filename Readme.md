@@ -1,4 +1,8 @@
 ## ARL(Asset Reconnaissance Lighthouse)资产侦察灯塔系统
+[![Python 3.6](https://img.shields.io/badge/python-3.6-yellow.svg)](https://www.python.org/)
+[![Docker Images](https://img.shields.io/docker/pulls/tophant/arl.svg)](https://hub.docker.com/r/tophant/arl)
+[![Github Issues](https://img.shields.io/github/issues/TophantTechnology/ARL.svg)](https://github.com/TophantTechnology/ARL/issues)
+[![Github Stars](https://img.shields.io/github/stars/TophantTechnology/ARL.svg)](https://github.com/TophantTechnology/ARL/stargazers)
 
 资产灯塔，不仅仅是域名收集
 
@@ -19,9 +23,7 @@
 docker pull tophant/arl
 ```
 
-修改`docker/docker-compose.yml` 中services web image 和 services worker image 对应的镜像地址。
-
-
+docker-compose 启动
 ```
 git clone https://github.com/TophantTechnology/ARL
 cd ARL/docker/
@@ -29,7 +31,7 @@ docker-compose up -d
 ```
 
 ### 截图
-登录页面，默认用户名密码admin/arlpass  
+登录页面，默认端口5003, 默认用户名密码admin/arlpass  
 ![登录页面](./image/login.png)
 
 任务页面
