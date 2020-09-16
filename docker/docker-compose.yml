@@ -2,7 +2,7 @@ version: '3'
 
 services:
     web:
-        image: arl_worker:v2
+        image: tophant/arl:latest
         container_name: arl_web
         restart: unless-stopped
         depends_on:
@@ -16,9 +16,10 @@ services:
         entrypoint: ["sh", "-c", "nginx; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
         environment:
           - LANG=en_US.UTF-8
+          - TZ=Asia/Shanghai
 
     worker:
-        image: arl_worker:v2
+        image: tophant/arl:latest
         container_name: arl_worker
         restart: unless-stopped
         depends_on:
@@ -31,6 +32,7 @@ services:
         entrypoint: ["sh", "-c", "celery -A app.celerytask.celery worker -l info -Q arltask -n arltask -c 2 -O fair -f arl_worker.log"]
         environment:
           - LANG=en_US.UTF-8
+          - TZ=Asia/Shanghai
 
     mongodb:
         image: mongo:3.6-stretch
