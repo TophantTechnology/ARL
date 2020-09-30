@@ -14,3 +14,4 @@ mmh3==2.5.1
 pyquery==1.4.1
 openpyxl==3.0.0
 gunicorn==19.9.0
+psutil==5.7.2

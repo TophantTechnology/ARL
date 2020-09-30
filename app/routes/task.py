@@ -210,11 +210,46 @@ class StopTask(ARLResource):
 
         control = celerytask.celery.control
 
-        #由subprocess启动的进程还存在 /doge
-        control.revoke(celery_id, terminate=True)
+        control.revoke(celery_id, signal='SIGTERM', terminate=True)
 
         utils.conn_db('task').update_one({'_id': ObjectId(task_id)}, {"$set": {"status": TaskStatus.STOP}})
 
         utils.conn_db('task').update_one({'_id': ObjectId(task_id)}, {"$set": {"end_time": utils.curr_date()}})
 
         return {"message": "success", "task_id": task_id, "code":200}
+
+
+delete_task_fields = ns.model('DeleteTask',  {
+    'del_task_data': fields.String(required=False, description="是否删除任务数据")
+})
+
+
+@ns.route('/delete/<string:task_id>')
+class DeleteTask(ARLResource):
+    parser = get_arl_parser(delete_task_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self, task_id=None):
+        """
+        任务删除
+        """
+        done_status = [TaskStatus.DONE, TaskStatus.STOP, TaskStatus.ERROR]
+        args = self.parser.parse_args()
+
+        del_task_data_flag = str(args.pop('del_task_data', "false")).lower()
+
+        task_data = utils.conn_db('task').find_one({'_id': ObjectId(task_id)})
+        if not task_data:
+            return {"message": "not found task", "task_id": task_id, "code": 103}
+
+        if task_data["status"] not in done_status:
+            return {"message": "task is running", "task_id": task_id, "code": 104}
+
+        utils.conn_db('task').delete_many({'_id': ObjectId(task_id)})
+        table_list = ["cert", "domain", "fileleak", "ip", "service", "site", "url"]
+        if del_task_data_flag == "true":
+            for name in table_list:
+                utils.conn_db(name).delete_many({'task_id': task_id})
+
+        return {"message": "success", "task_id": task_id, "code": 200}

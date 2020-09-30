@@ -1,8 +1,4 @@
-%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/%C0%AE%C0%AE/etc/passwd
-%e6%96%b0%e5%bb%ba%20%e6%96%87%e6%9c%ac%e6%96%87%e6%a1%a3.txt
-../../../../../../../../../../etc/passwd
 ..;/
-..\..\..\..\..\..\..\..\..\../etc/passwd
 .bash_history
 .bash_logout
 .bash_profile
@@ -18,7 +14,6 @@
 .env
 .env.example
 .esmtprc
-myadmin/login.php
 .ftpconfig
 .git-credentials
 .git/config
@@ -65,7 +60,6 @@ myadmin/login.php
 .well-known/apple-app-site-association
 .well-known/security.txt
 .wp-config.php.swp
-/debug/flags/v
 1.7z
 1.asp
 1.aspx
@@ -92,7 +86,6 @@ myadmin/login.php
 22.php
 _admin
 _async/AsyncResponseServiceSoap12
-_async/AsyncResponseServiceSoap12;../../xx
 _cat/
 _cat/indices
 _config
@@ -173,6 +166,7 @@ admin/menu
 admin/Register.aspx
 admin/server-status
 Adminer
+adminer.php
 adminer.sql
 administrator
 adminLogin.do
@@ -436,6 +430,7 @@ debug.php
 debug.txt
 Debug.yml
 debug.yml
+debug/flags/v
 debug/metrics
 debug/pprof/
 debug/vars
@@ -450,6 +445,8 @@ dev.html
 dev/applications
 dev/services
 dfshealth.html
+dist
+dist.zip
 doc/page/login.asp
 docker
 docker/Dockerfile
@@ -662,10 +659,12 @@ metric
 metrics
 metrics/
 metrics/probes
+mobile
 mongoid.yml
 monitor
 monitoring
 mw-config/
+myadmin/login.php
 nagios
 nginx.conf
 nginx_status
@@ -755,9 +754,6 @@ redmine
 requirements.txt
 resin-admin/
 resin-admin/index.php
-resin-doc/resource/tutorial/jndi-appconfig/test
-resin-doc/resource/tutorial/jndi-appconfig/test?inputFile=/etc/profile
-resin-doc/viewfile/?contextpath=/&servletpath=&file=index.jsp
 resin-status
 resin.tar
 resin.tar.gz
@@ -1062,7 +1058,6 @@ wiki
 Wiki.jsp
 wls-wsat
 wls-wsat/CoordinatorPortType11
-wls-wsat/CoordinatorPortType11;../../xxx
 workflow
 wp-config.php.bak
 wp-content/debug.log
@@ -1075,8 +1070,7 @@ ws/v1/cluster/apps
 WS_FTP.log
 WS_FTP.LOG
 ws_ftp.log
-ws_utc/config.do
-ws_utc/config.do;../../xxx
+ws_utc
 wsadmin.traceout
 wsadmin.valout
 wsadminListener.out
@@ -1143,6 +1137,3 @@ zeusQuartz.properties
 zf_backend.php
 zimbra/
 zipkin
-~/
-数据库.rar
-网站备份.rar

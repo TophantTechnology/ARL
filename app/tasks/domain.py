@@ -710,7 +710,8 @@ class DomainTask():
                                                                      'port_id': _info.port_id,
                                                                      'product': _info.product,
                                                                      'version': _info.version})
-        utils.conn_db('service').insert(self.service_info_list)
+        if self.service_info_list:
+            utils.conn_db('service').insert(self.service_info_list)
 
 
     def search_engines(self):

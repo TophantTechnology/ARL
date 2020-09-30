@@ -205,7 +205,8 @@ class IPTask():
                                                                     'port_id': _info.get("port_id"),
                                                                     'product': _info.get("product"),
                                                                     'version': _info.get("version")})
-        utils.conn_db('service').insert(self.service_info_list)
+        if self.service_info_list:
+            utils.conn_db('service').insert(self.service_info_list)
 
 
     def file_leak(self):

@@ -4,11 +4,11 @@ from app.config import Config
 from . import gen_md5, random_choices
 from .conn import conn_db
 
+salt = 'arlsalt!@#'
+
 def user_login(username = None, password = None):
     if not username or not password:
         return
-
-    salt = 'arlsalt!@#'
 
     query = {"username": username, "password": gen_md5(salt + password)}
 
@@ -57,6 +57,16 @@ def user_login_header():
 def user_logout(token):
     if user_login_header():
         conn_db('user').update_one({"token": token}, {"$set": {"token": None}})
+
+
+def change_pass(token, old_password, new_password):
+    query = {"token": token, "password": gen_md5(salt + old_password)}
+    data = conn_db('user').find_one(query)
+    if data:
+        conn_db('user').update_one({"token": token}, {"$set": {"password": gen_md5(salt + new_password)}})
+        return True
+    else:
+        return False
 
 
 import functools

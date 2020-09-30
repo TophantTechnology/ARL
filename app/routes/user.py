@@ -46,7 +46,45 @@ class LogoutARL(ARLResource):
         return build_data({})
 
 
+change_pass_fields = ns.model('ChangePassARL', {
+    'old_password': fields.String(required=True, description="旧密码"),
+    'new_password': fields.String(required=True, description="新密码"),
+    'check_password': fields.String(required=True, description="确认密码"),
+})
 
+
+@ns.route('/change_pass')
+class ChangePassARL(ARLResource):
+    @ns.expect(change_pass_fields)
+    def post(self):
+        """
+        密码修改
+        """
+        args = self.parse_args(change_pass_fields)
+        ret = {
+            "message": "success",
+            "code": 200,
+            "data": {}
+        }
+        token = request.headers.get("Token")
+
+        if args["new_password"] != args["check_password"]:
+            ret["code"] = 301
+            ret["message"] = "新密码和确定密码不一致"
+            return ret
+
+        if not args["new_password"]:
+            ret["code"] = 302
+            ret["message"] = "新密码不能为空"
+            return ret
+
+        if utils.change_pass(token, args["old_password"], args["new_password"]):
+            utils.user_logout(token)
+        else:
+            ret["message"] = "旧密码错误"
+            ret["code"] = 303
+
+        return ret
 
 
 def build_data(data):

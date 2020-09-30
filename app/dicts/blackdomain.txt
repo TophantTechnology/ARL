@@ -15,3 +15,4 @@
 .fe.baidu.com
 .hiphotos.baidu.com
 .openwebgame.qq.com
+.ke.qq.com

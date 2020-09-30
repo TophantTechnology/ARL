@@ -135,3 +135,10 @@ def verify_cert(url):
         return True
     except Exception as e:
         return False
+
+
+def url_ext(url):
+    url_parse = urlparse(url)
+    path = url_parse.path
+    ext = os.path.splitext(path)[-1]
+    return ext.lower()

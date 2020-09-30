@@ -10,14 +10,20 @@ class PortScan:
         self.ports = ports
         self.alive_port = "22,80,443,3389,8007-8011,8443,9090,8080-8091,8093,8099,5000-5004,2222,3306,1433,21,25"
         self.nmap_arguments = "-sS -n -PE -PS{} --open".format(self.alive_port)
+        self.host_timeout = 60*10
         if service_detect:
+            self.host_timeout += 60 * 10
             self.nmap_arguments += " -sV"
 
         if os_detect:
+            self.host_timeout += 60 * 4
             self.nmap_arguments += " -O"
 
+        if self.ports == "0-65535":
+            self.host_timeout += 60 * 10
+
         self.nmap_arguments += " --min-rate 64"
-        self.nmap_arguments += " --host-timeout 1000"
+        self.nmap_arguments += " --host-timeout {}".format(self.host_timeout)
         self.nmap_arguments += " --min-hostgroup 64 --min-parallelism 64"
 
 

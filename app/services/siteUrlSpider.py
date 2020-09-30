@@ -126,7 +126,7 @@ class SiteURLSpider():
                        #{'name': 'link', 'attr': 'href', 'type': URLTYPE.css}
                        ]
 
-        self.ignore_ext = [".pdf", ".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx"]
+        self.ignore_ext = [".pdf", ".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx", ".zip", ".rar"]
 
 
     def get_urls(self, entry_url):
@@ -136,6 +136,9 @@ class SiteURLSpider():
     def _work(self, entry_url):
         try:
             logger.info("[{}] req = > {}".format(len(self.done_url_list), entry_url))
+            if utils.url_ext(entry_url) in self.ignore_ext:
+                return URLsimilarList()
+
             conn = utils.http_req(entry_url)
             if conn.status_code in [301, 302, 307]:
                 _url = urljoin(entry_url, conn.headers.get("Location", "")).strip()
@@ -152,6 +155,8 @@ class SiteURLSpider():
                     self.all_url_list.add(url_info)
 
             html = conn.content
+            if "html" not in conn.headers.get("Content-Type", "").lower():
+                return URLsimilarList()
 
             dom = pq(html)
             ret_url = URLsimilarList()

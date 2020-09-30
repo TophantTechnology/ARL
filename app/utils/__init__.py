@@ -2,6 +2,8 @@ import subprocess
 import shlex
 import random
 import string
+import psutil
+import os
 import re
 import hashlib
 from celery.utils.log import get_task_logger
@@ -15,7 +17,7 @@ from .domain import check_domain_black, is_valid_domain
 from .ip import is_vaild_ip_target, not_in_black_ips, get_ip_asn, get_ip_city, get_ip_type
 from .arl import arl_domain
 from .time import curr_date
-from .url import rm_similar_url, get_hostname, normal_url, same_netloc, verify_cert
+from .url import rm_similar_url, get_hostname, normal_url, same_netloc, verify_cert, url_ext
 from .cert import get_cert
 
 def load_file(path):
@@ -151,8 +153,28 @@ def gen_filename(site):
     return re.sub('[^\w\-_\. ]', '_', filename)
 
 
+def kill_child_process(pid):
+    logger = get_logger()
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        logger.info("kill child_process {}".format(child))
+        child.kill()
 
-from .user import user_login, user_login_header, auth, user_logout
+
+
+
+def exit_gracefully(signum, frame):
+    logger = get_logger()
+    logger.info('Receive signal {} frame {}'.format(signum, frame))
+    pid = os.getpid()
+    kill_child_process(pid)
+    parent = psutil.Process(pid)
+    logger.info("kill self {}".format(parent))
+    parent.kill()
+
+
+from .user import user_login, user_login_header, auth, user_logout, change_pass
+
 
 
 
