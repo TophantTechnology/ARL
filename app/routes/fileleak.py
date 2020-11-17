@@ -11,7 +11,7 @@ base_search_fields = {
     'site': fields.String(description="站点"),
     'content_length': fields.Integer(description="body 长度"),
     'status_code': fields.Integer(description="状态码"),
-    'title': fields.Integer(description="标题"),
+    'title': fields.String(description="标题"),
     "task_id": fields.String(description="任务ID")
 }
 
