@@ -4,12 +4,12 @@ Werkzeug==0.14.1
 Flask==0.12.4
 celery==4.2.1
 flask_restplus==0.13.0
-requests==2.19.1
+requests==2.25.0
 dnspython==1.15.0
 tld==0.9.1
 PyYAML==5.1
 geoip2==2.9.0
-pyOpenSSL==19.0.0
+pyOpenSSL==20.0.0
 mmh3==2.5.1
 pyquery==1.4.1
 openpyxl==3.0.0
