@@ -9,23 +9,36 @@ class PortScan:
         self.targets = " ".join(targets)
         self.ports = ports
         self.alive_port = "22,80,443,3389,8007-8011,8443,9090,8080-8091,8093,8099,5000-5004,2222,3306,1433,21,25"
-        self.nmap_arguments = "-sS -n -PE -PS{} --open".format(self.alive_port)
-        self.host_timeout = 60*10
+        self.nmap_arguments = "-sS -n --open --defeat-rst-ratelimit"
+        self.max_retries = 3
+        self.host_timeout = 60*5
         if service_detect:
-            self.host_timeout += 60 * 10
+            self.host_timeout += 60 * 5
             self.nmap_arguments += " -sV"
 
         if os_detect:
             self.host_timeout += 60 * 4
             self.nmap_arguments += " -O"
 
+        if len(self.ports.split(",")) > 60:
+            self.nmap_arguments += " -PE -PS{}".format(self.alive_port)
+            self.max_retries = 2
+        else:
+            if self.ports != "0-65535":
+                self.nmap_arguments += " -Pn"
+
         if self.ports == "0-65535":
+            self.nmap_arguments += " -PE -PS{}".format(self.alive_port)
             self.host_timeout += 60 * 10
+            self.max_retries = 0
 
+
+        self.nmap_arguments += " --max-rtt-timeout 50ms  --initial-rtt-timeout 100ms"
         self.nmap_arguments += " --min-rate 64"
-        self.nmap_arguments += " --host-timeout {}".format(self.host_timeout)
+        self.nmap_arguments += " --script-timeout 6s"
+        self.nmap_arguments += " --host-timeout {}s".format(self.host_timeout)
         self.nmap_arguments += " --min-hostgroup 64 --min-parallelism 64"
-
+        self.nmap_arguments += " --max-retries {}".format(self.max_retries)
 
     def run(self):
         logger.info("nmap target {}  ports {}  arguments {}".format(

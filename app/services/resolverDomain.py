@@ -2,28 +2,14 @@ from app import utils
 import threading
 import collections
 from app.modules import  DomainInfo
+from .baseThread import BaseThread
 logger = utils.get_logger()
 
-class ResolverDomain():
-    def __init__(self, domains, concurrency = 6):
-        self.domains = domains
+
+class ResolverDomain(BaseThread):
+    def __init__(self, domains, concurrency=6):
+        super().__init__(domains, concurrency=concurrency)
         self.resolver_map = {}
-        self.semaphore = threading.Semaphore(concurrency)
-        self.concurrency = concurrency
-
-
-    def run(self):
-        self.resolver()
-        return self.resolver_map
-
-    def work(self, domain):
-        try:
-            self.resolver_map[domain] = utils.get_ip(domain)
-        except Exception as e:
-            logger.exception(e)
-
-        self.semaphore.release()
-
 
     '''
     {
@@ -40,33 +26,27 @@ class ResolverDomain():
         ]
     }
     '''
-    def resolver(self):
-        deque = collections.deque(maxlen=self.concurrency)
-        for domain in self.domains:
-            curr_domain = domain
-            if isinstance(domain, dict):
-                curr_domain =curr_domain.get("domain")
+    def work(self, domain):
+        curr_domain = domain
+        if isinstance(domain, dict):
+            curr_domain = domain.get("domain")
 
-            elif isinstance(domain, DomainInfo):
-                curr_domain = domain.domain
+        elif isinstance(domain, DomainInfo):
+            curr_domain = domain.domain
 
-            if not  curr_domain:
-                continue
+        if not curr_domain:
+            return
 
-            if curr_domain in self.resolver_map:
-                continue
+        if curr_domain in self.resolver_map:
+            return
 
-            self.semaphore.acquire()
+        self.resolver_map[curr_domain] = utils.get_ip(curr_domain)
 
-            t1 = threading.Thread(target=self.work, args=(curr_domain,))
-            t1.start()
-
-            deque.append(t1)
-
-        for t in list(deque):
-            t.join()
+    def run(self):
+        self._run()
+        return self.resolver_map
 
 
-def resolver_domain(domains, concurrency = 6):
+def resolver_domain(domains, concurrency=15):
     r = ResolverDomain(domains, concurrency)
-    return  r.run()
+    return r.run()

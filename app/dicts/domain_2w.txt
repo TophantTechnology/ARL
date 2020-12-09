@@ -6598,7 +6598,6 @@ imt
 imtest
 imvu
 imwxsecure
-IN
 in
 ina
 inb
@@ -14452,7 +14451,6 @@ umcdn
 umfrage
 ums
 umwelt
-UN
 un
 uncheckout
 underdog

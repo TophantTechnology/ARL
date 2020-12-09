@@ -60,7 +60,7 @@ def fetch_favicon(url):
     return  f.run()
 
 
-def fetch_site(sites, concurrency = 6):
+def fetch_site(sites, concurrency = 15):
     f = FetchSite(sites, concurrency = concurrency)
     return f.run()
 

@@ -1,5 +1,6 @@
 from .baseInfo import BaseInfo
 
+
 class DomainInfo(BaseInfo):
     def __init__(self, domain, record, type, ips):
         self.record_list = record
@@ -14,7 +15,6 @@ class DomainInfo(BaseInfo):
 
     def __hash__(self):
         return hash(self.domain)
-
 
     def _dump_json(self):
         item = {

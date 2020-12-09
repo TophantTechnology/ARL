@@ -45,6 +45,6 @@ class BuildDomainInfo(BaseThread):
 
         return self.domain_info_list
 
-def build_domain_info(domains, concurrency = 6):
+def build_domain_info(domains, concurrency = 15):
     p = BuildDomainInfo(domains, concurrency = concurrency)
-    return  p.run()
+    return p.run()

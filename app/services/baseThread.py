@@ -1,8 +1,9 @@
 import threading
 import collections
-import  requests.exceptions
+import requests.exceptions
 from lxml import etree
-from app import  utils
+from app import utils
+from app.modules import DomainInfo
 logger = utils.get_logger()
 
 
@@ -32,7 +33,7 @@ class BaseThread(object):
         self.semaphore.release()
 
     def _run(self):
-        deque = collections.deque(maxlen=2000 )
+        deque = collections.deque(maxlen=2000)
         cnt = 0
 
         for target in self.targets:

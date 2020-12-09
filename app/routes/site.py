@@ -2,7 +2,7 @@ from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
 
-ns = Namespace('site')
+ns = Namespace('site', description="站点信息")
 
 logger = get_logger()
 

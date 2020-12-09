@@ -1,16 +1,16 @@
 import threading
 import collections
-from app import  utils
+import time
 
+from app import utils
+from .baseThread import BaseThread
 
 import  requests.exceptions
 logger = utils.get_logger()
 
-class CheckHTTP(object):
+class CheckHTTP(BaseThread):
     def __init__(self, urls, concurrency=10):
-        self.concurrency = concurrency
-        self.semaphore = threading.Semaphore(concurrency)
-        self.urls = urls
+        super().__init__(urls, concurrency=concurrency)
         self.timeout = (5, 3)
         self.checkout_map = {}
 
@@ -38,7 +38,7 @@ class CheckHTTP(object):
     def work(self, url):
         try:
             out = self.check(url)
-            if out is not  None:
+            if out is not None:
                 self.checkout_map[url] = out
 
         except requests.exceptions.RequestException as e:
@@ -48,30 +48,15 @@ class CheckHTTP(object):
             logger.warning("error on url {}".format(url))
             logger.warning(e)
 
-        self.semaphore.release()
-
     def run(self):
-        deque = collections.deque(maxlen=self.concurrency)
-
-        for url in self.urls:
-            url = url.strip()
-            if not url:
-                continue
-
-            if "://" not in url:
-                url = "http://" + url
-            self.semaphore.acquire()
-            t1 = threading.Thread(target=self.work, args=(url,))
-            t1.start()
-
-            deque.append(t1)
-
-        for t in list(deque):
-            t.join()
-
+        t1 = time.time()
+        logger.info("start check http {}".format(len(self.targets)))
+        self._run()
+        elapse = time.time() - t1
+        logger.info("end start check http {} elapse {}".format(len(self.checkout_map), elapse))
         return self.checkout_map
 
 
-def check_http(urls):
-    c = CheckHTTP(urls)
-    return  c.run()
+def check_http(urls, concurrency=15):
+    c = CheckHTTP(urls, concurrency)
+    return c.run()

@@ -5,7 +5,7 @@ from app.config import Config
 from app.utils import get_logger
 from werkzeug.utils import secure_filename
 
-ns = Namespace('image')
+ns = Namespace('image', description="截图信息")
 
 logger = get_logger()
 

@@ -2,6 +2,7 @@ import re
 from flask_restplus import Resource, Api, reqparse, fields
 from app import modules
 from bson.objectid import ObjectId
+from datetime import datetime
 
 from app.utils import conn_db as conn
 base_query_fields = {
@@ -43,7 +44,25 @@ class ARLResource(Resource):
             if args[key] is None:
                 continue
 
-            if isinstance(args[key], str):
+            if key.endswith("__dgt"):
+                real_key = key.split('__dgt')[0]
+                raw_value = query_args.get(real_key, {})
+                raw_value.update({
+                    "$gt": datetime.strptime(args[key],
+                                             "%Y-%m-%d %H:%M:%S")
+                })
+                query_args[real_key] = raw_value
+
+            elif key.endswith("__dlt"):
+                real_key = key.split('__dlt')[0]
+                raw_value = query_args.get(real_key, {})
+                raw_value.update({
+                    "$lt": datetime.strptime(args[key],
+                                             "%Y-%m-%d %H:%M:%S")
+                })
+                query_args[real_key] = raw_value
+
+            elif isinstance(args[key], str):
                 query_args[key] = {
                     "$regex": re.escape(args[key]),
                     '$options': "i"
@@ -54,13 +73,16 @@ class ARLResource(Resource):
 
         return query_args
 
-
     def build_return_items(self, data):
         items = []
 
+        special_keys = ["_id", "save_date", "update_date"]
+
         for item in data:
-            if "_id" in item:
-                item["_id"] = str(item["_id"])
+            for key in item:
+                if key in special_keys:
+                    item[key] = str(item[key])
+
             items.append(item)
 
         return items
@@ -76,8 +98,10 @@ class ARLResource(Resource):
         count = conn(collection).count(query)
         items = self.build_return_items(result)
 
-        if '_id' in query:
-            query['_id'] = str(query['_id'])
+        special_keys = ["_id", "save_date", "update_date"]
+        for key in query:
+            if key in special_keys:
+                query[key] = str(query[key])
 
         data = {
             "page": page,
@@ -144,3 +168,8 @@ from .cert import ns as cert_ns
 from .service import ns as service_ns
 from .fileleak import ns as filleak_ns
 from .export import ns as export_ns
+from .assetScope import ns as asset_scope_ns
+from .assetDomain import ns as asset_domain_ns
+from .assetIP import ns as asset_ip_ns
+from .assetSite import ns as asset_site_ns
+from .scheduler import ns as scheduler_ns

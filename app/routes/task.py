@@ -1,12 +1,13 @@
+import re
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from bson import ObjectId
 from app import celerytask
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser, conn
 from app import utils
-from app.modules import TaskStatus
+from app.modules import TaskStatus, ErrorMsg, TaskSyncStatus, CeleryAction
 
-ns = Namespace('task')
+ns = Namespace('task', description="资产发现任务信息")
 
 logger = get_logger()
 
@@ -15,6 +16,7 @@ base_search_task_fields = {
     'target': fields.String(description="任务目标"),
     'status': fields.String(description="任务状态"),
     '_id': fields.String(description="任务ID"),
+    'task_tag': fields.String(description="监控任务和侦查任务tag"),
     'options.domain_brute': fields.Boolean(description="是否开启域名爆破"),
     'options.domain_brute_type': fields.String(description="域名爆破类型"),
     'options.port_scan_type': fields.Boolean(description="端口扫描类型"),
@@ -99,6 +101,7 @@ class ARLTask(ARLResource):
             "target": target,
             "start_time": "-",
             "end_time": "-",
+            "task_tag": "task", #标记为正常下发的任务
             "service": [],
             "status": "waiting",
             "options": args,
@@ -107,9 +110,18 @@ class ARLTask(ARLResource):
 
         logger.info(task_data)
 
-        target_lists = target.split()
+        target_lists = re.split(r",|\s", target)
         ip_target_list = []
         ret_items = []
+
+        for item in target_lists:
+            if not utils.is_valid_domain(item) and not utils.is_vaild_ip_target(item):
+                return utils.build_ret(ErrorMsg.TargetInvalid, data={"target": item})
+
+            if utils.is_vaild_ip_target(item):
+                if not utils.not_in_black_ips(item):
+                    return utils.build_ret(ErrorMsg.IPInBlackIps, data={"ip": item})
+
         for item in target_lists:
             if utils.is_valid_domain(item):
                 ret_item = {
@@ -177,7 +189,17 @@ def submit_task(task_data):
     conn('task').insert_one(task_data)
     task_id = str(task_data.pop("_id"))
     task_data["task_id"] = task_id
-    celery_id = celerytask.arl_task.delay(options=task_data)
+
+    celery_action = CeleryAction.DOMAIN_TASK
+    if task_data["type"] == "domain":
+        celery_action = CeleryAction.DOMAIN_TASK
+    elif task_data["type"] == "ip":
+        celery_action = CeleryAction.IP_TASK
+    task_options = {
+        "celery_action": celery_action,
+        "data": task_data
+    }
+    celery_id = celerytask.arl_task.delay(options=task_options)
 
     logger.info("target:{} task_id:{} celery_id:{}".format(target, task_id, celery_id))
 
@@ -199,14 +221,14 @@ class StopTask(ARLResource):
 
         task_data = utils.conn_db('task').find_one({'_id': ObjectId(task_id)})
         if not task_data:
-            return {"message": "not found task", "task_id": task_id, "code":100}
+            return utils.build_ret(ErrorMsg.NotFoundTask, {"task_id": task_id})
 
         if task_data["status"] in done_status:
-            return {"message": "error, task is done", "task_id": task_id, "code":101}
+            return utils.build_ret(ErrorMsg.TaskIsRunning, {"task_id": task_id})
 
         celery_id = task_data.get("celery_id")
         if not celery_id:
-            return {"message": "not found celery_id", "task_id": task_id, "code": 102}
+            return utils.build_ret(ErrorMsg.CeleryIdNotFound, {"task_id": task_id})
 
         control = celerytask.celery.control
 
@@ -220,36 +242,133 @@ class StopTask(ARLResource):
 
 
 delete_task_fields = ns.model('DeleteTask',  {
-    'del_task_data': fields.String(required=False, description="是否删除任务数据")
+    'del_task_data': fields.Boolean(required=False, default=False, description="是否删除任务数据"),
+    'task_id': fields.List(fields.String(required=True, description="任务ID"))
 })
 
 
-@ns.route('/delete/<string:task_id>')
+@ns.route('/delete/')
 class DeleteTask(ARLResource):
-    parser = get_arl_parser(delete_task_fields, location='args')
-
     @auth
-    @ns.expect(parser)
-    def get(self, task_id=None):
+    @ns.expect(delete_task_fields)
+    def post(self):
         """
         任务删除
         """
         done_status = [TaskStatus.DONE, TaskStatus.STOP, TaskStatus.ERROR]
-        args = self.parser.parse_args()
+        args = self.parse_args(delete_task_fields)
+        task_id_list = args.pop('task_id')
+        del_task_data_flag = args.pop('del_task_data')
 
-        del_task_data_flag = str(args.pop('del_task_data', "false")).lower()
+        for task_id in task_id_list:
+            task_data = utils.conn_db('task').find_one({'_id': ObjectId(task_id)})
+            if not task_data:
+                return utils.build_ret(ErrorMsg.NotFoundTask, {"task_id": task_id})
 
-        task_data = utils.conn_db('task').find_one({'_id': ObjectId(task_id)})
+            # if task_data["status"] not in done_status:
+            #     return utils.build_ret(ErrorMsg.TaskIsRunning, {"task_id": task_id})
+
+        for task_id in task_id_list:
+            utils.conn_db('task').delete_many({'_id': ObjectId(task_id)})
+            table_list = ["cert", "domain", "fileleak", "ip", "service", "site", "url"]
+            if del_task_data_flag:
+                for name in table_list:
+                    utils.conn_db(name).delete_many({'task_id': task_id})
+
+        return utils.build_ret(ErrorMsg.Success, {"task_id": task_id_list})
+
+
+sync_task_fields = ns.model('SyncTask',  {
+    'task_id': fields.String(required=True, description="任务ID"),
+    'scope_id': fields.String(required=True, description="资产范围ID"),
+})
+
+
+@ns.route('/sync/')
+class SyncTask(ARLResource):
+    @auth
+    @ns.expect(sync_task_fields)
+    def post(self):
+        """
+        任务同步
+        """
+        done_status = [TaskStatus.DONE, TaskStatus.STOP, TaskStatus.ERROR]
+        args = self.parse_args(sync_task_fields)
+        task_id = args.pop('task_id')
+        scope_id = args.pop('scope_id')
+
+        query = {'_id': ObjectId(task_id)}
+        task_data = utils.conn_db('task').find_one(query)
         if not task_data:
-            return {"message": "not found task", "task_id": task_id, "code": 103}
+            return utils.build_ret(ErrorMsg.NotFoundTask, {"task_id": task_id})
+
+        asset_scope_data = utils.conn_db('asset_scope').find_one({'_id': ObjectId(scope_id)})
+        if not asset_scope_data:
+            return utils.build_ret(ErrorMsg.NotFoundScopeID, {"task_id": task_id})
+
+        if task_data.get("type") != "domain":
+            return utils.build_ret(ErrorMsg.TaskTypeIsNotDomain, {"task_id": task_id})
+
+        if not utils.is_in_scopes(task_data["target"], asset_scope_data["scope_array"]):
+            return utils.build_ret(ErrorMsg.TaskTargetNotInScope, {"task_id": task_id})
 
         if task_data["status"] not in done_status:
-            return {"message": "task is running", "task_id": task_id, "code": 104}
+            return utils.build_ret(ErrorMsg.TaskIsRunning, {"task_id": task_id})
 
-        utils.conn_db('task').delete_many({'_id': ObjectId(task_id)})
-        table_list = ["cert", "domain", "fileleak", "ip", "service", "site", "url"]
-        if del_task_data_flag == "true":
-            for name in table_list:
-                utils.conn_db(name).delete_many({'task_id': task_id})
+        task_sync_status = task_data.get("sync_status", TaskSyncStatus.DEFAULT)
 
-        return {"message": "success", "task_id": task_id, "code": 200}
+        if task_sync_status not in [TaskSyncStatus.DEFAULT, TaskSyncStatus.ERROR]:
+            return utils.build_ret(ErrorMsg.TaskSyncDealing, {"task_id": task_id})
+
+        task_data["sync_status"] = TaskSyncStatus.WAITING
+
+        options = {
+            "celery_action": CeleryAction.DOMAIN_TASK_SYNC_TASK,
+            "data": {
+                "task_id": task_id,
+                "scope_id": scope_id
+            }
+        }
+        celerytask.arl_task.delay(options=options)
+
+        conn('task').find_one_and_replace(query, task_data)
+
+        return utils.build_ret(ErrorMsg.Success, {"task_id": task_id})
+
+
+sync_scope_fields = ns.model('SyncScope',  {
+    'target': fields.String(required=True, description="需要同步的目标"),
+})
+
+
+@ns.route('/sync_scope/')
+class SyncTask(ARLResource):
+    parser = get_arl_parser(sync_scope_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        任务同步资产组查询
+        """
+        args = self.parser.parse_args()
+        target = args.pop("target")
+        if not utils.is_valid_domain(target):
+            return utils.build_ret(ErrorMsg.DomainInvalid, {"target": target})
+
+        args["scope_array"] = utils.get_fld(target)
+        args["size"] = 100
+        args["order"] = "_id"
+
+        data = self.build_data(args=args, collection='asset_scope')
+        ret = []
+        for item in data["items"]:
+            if utils.is_in_scopes(target, item["scope_array"]):
+                ret.append(item)
+
+        data["items"] = ret
+        data["total"] = len(ret)
+        return data
+
+
+

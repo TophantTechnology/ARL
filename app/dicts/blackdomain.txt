@@ -16,3 +16,9 @@
 .hiphotos.baidu.com
 .openwebgame.qq.com
 .ke.qq.com
+.book.2.qq.com
+.tcdn.1.qq.com
+.tcdn.2.qq.com
+.book.3.qq.com
+.book.4.qq.com
+.o.tencent.com

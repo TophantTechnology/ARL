@@ -11,7 +11,7 @@ from app.utils import get_logger, auth
 from app import utils
 from urllib.parse import quote
 
-ns = Namespace('export')
+ns = Namespace('export', description="任务报告导出接口")
 
 logger = get_logger()
 

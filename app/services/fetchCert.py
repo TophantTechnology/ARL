@@ -28,8 +28,8 @@ class FetchCert(BaseThread):
 
 
 
-def fetch_cert(targets, concurrency = 6):
-    f = FetchCert(targets, concurrency = 6)
+def fetch_cert(targets, concurrency = 15):
+    f = FetchCert(targets, concurrency = concurrency)
     return f.run()
 
 

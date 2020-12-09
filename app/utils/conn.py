@@ -41,11 +41,8 @@ class ConnMongo(object):
     def __new__(self):
         if not hasattr(self, 'instance'):
             self.instance = super(ConnMongo, self).__new__(self)
+            self.instance.conn = MongoClient(Config.MONGO_URL)
         return self.instance
-
-
-    def __init__(self):
-        self.conn = MongoClient(Config.MONGO_URL)
 
 
 def conn_db(collection, db_name = None):

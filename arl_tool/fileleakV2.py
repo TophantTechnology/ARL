@@ -1,21 +1,144 @@
 import time
 import difflib
+import requests
 from urllib.parse import urlparse, urljoin
+import re
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import sys
 from tld import get_tld
 import itertools
+import argparse
 
-from app import utils
-from .baseThread import BaseThread
+class ObjectDict(dict):
+    """Makes a dictionary behave like an object, with attribute-style access.
+    """
 
-logger = utils.get_logger()
+    def __getattr__(self, name):
+        # type: (str) -> any
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
 
-min_length = 100
-max_length = 50*1024
-read_timeout = 60
-bool_ratio = 0.8
-concurrency_count = 6
+    def __setattr__(self, name, value):
+        # type: (str, any) -> None
+        self[name] = value
+
+UA = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+
+
+proxies = {
+    'https': "http://10.0.86.147:8080",
+    'http': "http://10.0.86.147:8080"
+}
+
+SET_PROXY = False
+
+def http_req(url, method = 'get', **kwargs):
+    kwargs.setdefault('verify', False)
+    kwargs.setdefault('timeout', (10.1, 30.1))
+    kwargs.setdefault('allow_redirects', False)
+
+    headers = kwargs.get("headers", {})
+    headers.setdefault("User-Agent", UA)
+
+    kwargs["headers"] = headers
+
+    if SET_PROXY:
+        kwargs["proxies"] = proxies
+
+    conn =   getattr(requests, method)(url, **kwargs)
+
+    return conn
+
+
+def logger(msg):
+    print(msg)
+
+def get_title(body):
+    """
+    根据页面源码返回标题
+    :param body: <title>sss</title>
+    :return: sss
+    """
+    result = ''
+    title_patten = re.compile(rb'<title>([\s\S]{1,200})</title>', re.I)
+    title = title_patten.findall(body)
+    if len(title) > 0:
+        try:
+            result = title[0].decode("utf-8")
+        except Exception as e:
+            result = title[0].decode("gbk", errors="replace")
+    return result
+
+
+
+
+import threading
+import collections
+import  requests.exceptions
+
+class BaseThread(object):
+    def __init__(self, targets, concurrency=6):
+        self.concurrency = concurrency
+        self.semaphore = threading.Semaphore(concurrency)
+        self.targets = targets
+
+    def work(self, site):
+        raise NotImplementedError()
+
+    def _work(self, url):
+        try:
+            self.work(url)
+        except requests.exceptions.RequestException as e:
+            pass
+
+        except Exception as e:
+            logger("error on {}".format(url))
+            self.semaphore.release()
+            raise e
+
+        self.semaphore.release()
+
+    def _run(self):
+        deque = collections.deque(maxlen=2000)
+        cnt = 0
+        for target in self.targets:
+            if isinstance(target, str):
+                target = target.strip()
+
+            cnt += 1
+            logger("[{}/{}] work on {}".format(cnt, len(self.targets), target))
+
+            if not target:
+                continue
+
+            self.semaphore.acquire()
+            #self._work(target)
+            t1 = threading.Thread(target=self._work, args=(target,))
+            t1.start()
+
+            deque.append(t1)
+
+        for t in list(deque):
+            t.join()
+
+
+
+
+settings = ObjectDict()
+
+settings.min_length = 100
+settings.max_length = 50*1024
+settings.read_timeout = 60
+settings.bool_ratio = 0.8
+
+
+
+
+
+
 
 class URL():
     def __init__(self, url, payload):
@@ -67,7 +190,7 @@ class URL():
         return self._path
 
 class HTTPReq():
-    def __init__(self, url: URL , read_timeout = 60, max_length = 50*1024):
+    def __init__(self, url: URL , read_timeout = 60, max_length = settings.max_length):
         self.url = url
         self.read_timeout = read_timeout
         self.max_length = max_length
@@ -77,7 +200,7 @@ class HTTPReq():
 
     def req(self):
         content = b''
-        conn = utils.http_req(self.url.url, 'get', timeout=(3, 6), stream=True)
+        conn = http_req(self.url.url, 'get', timeout=(3, 6), stream=True)
         self.conn = conn
         start_time = time.time()
         for data in conn.iter_content(chunk_size=512):
@@ -92,7 +215,6 @@ class HTTPReq():
 
         content_len = self.conn.headers.get("Content-Length", len(self.content))
         self.conn.headers["Content-Length"] = content_len
-
         conn.close()
 
         return self.status_code, self.content
@@ -163,7 +285,7 @@ class Page():
                 return True
 
             quick_ratio = difflib.SequenceMatcher(None, self_content, other_content).quick_ratio()
-            if quick_ratio >= bool_ratio:
+            if quick_ratio >= settings.bool_ratio:
                 self.times +=1
                 return True
             else:
@@ -195,7 +317,7 @@ class Page():
     @property
     def title(self) -> str:
         if self._title is None:
-            self._title = utils.get_title(self.content).strip()
+            self._title = get_title(self.content).strip()
 
         return self._title
 
@@ -222,6 +344,7 @@ class Page():
 
         return self._is_back_up_page
 
+
     def __str__(self):
         msg = "[{}][{}][{}]{}".format(self.status_code, self.title, len(self.content), self.url)
         return msg
@@ -229,15 +352,8 @@ class Page():
     def __repr__(self):
         return "<Page> "+ self.__str__()
 
-    def dump_json(self):
-        item = {
-            "title": self.title,
-            "url": str(self.url),
-            "content_length": len(self.content),
-            "status_code": self.status_code,
-        }
 
-        return item
+
 
 
 class FileLeak(BaseThread):
@@ -279,7 +395,7 @@ class FileLeak(BaseThread):
 
     def build_404_page(self):
         url_404 = URL(self.target + self.path_404, self.path_404)
-        logger.info("req => {}".format(url_404))
+        logger("req => {}".format(url_404))
         page_404 = Page(self.http_req(url_404))
         self.page404_set.add(page_404)
         if self.record_page:
@@ -293,7 +409,7 @@ class FileLeak(BaseThread):
 
     def run(self):
         t1 = time.time()
-        logger.info("start fileleak {}".format(len(self.targets)))
+        logger("start fileleak {}".format(len(self.targets)))
 
         self.build_404_page()
 
@@ -302,7 +418,7 @@ class FileLeak(BaseThread):
         self.check_page_200()
 
         elapse = time.time() - t1
-        logger.info("end fileleak elapse {}".format(elapse))
+        logger("end fileleak elapse {}".format(elapse))
 
         return self.page200_set
 
@@ -312,9 +428,11 @@ class FileLeak(BaseThread):
             req.req()
             return req
         except Exception as e:
-            logger.warning("error on {}".format(e))
+            logger("error on {}".format(e))
             self.error_times += 1
             raise e
+
+
 
     def is_404_page(self, page: Page):
         if page.status_code not in self.page200_code_list:
@@ -509,12 +627,16 @@ class GenURL():
 
         return self.urls
 
-from typing import  List
 
-def file_leak(targets, dicts, gen_dict = True) -> List[Page]:
+def load_file(path):
+    with open(path, "r+") as f:
+        return f.readlines()
+
+
+
+def file_leak(targets, dicts):
     all_gen_url = set()
     map_url = dict()
-
     for site in targets:
         site = normal_url(site.strip())
         if not site:
@@ -522,27 +644,114 @@ def file_leak(targets, dicts, gen_dict = True) -> List[Page]:
 
         map_url[URL(site, "").scope] = set()
         a = GenURL(site, dicts)
-        all_gen_url |= a.gen(gen_dict)
+        all_gen_url |= a.gen(settings.gen_dict)
 
     for url in all_gen_url:
         map_url[url.scope].add(url)
 
     cnt = 0
     total = len(map_url)
-    ret = []
     for target in map_url:
         cnt += 1
-
+        print("file leak => [{}/{}] {}".format(cnt, total, target))
         try:
-            f = FileLeak(target, map_url[target], concurrency_count)
+            f = FileLeak(target, map_url[target], settings.concurrency_count)
             pages = f.run()
-            for page in pages:
-                logger.info("found => {}".format(page))
+            with open(settings.output, "a") as f:
+                for page in pages:
+                    logger("found => {}".format(page))
+                    f.write("{}\n".format(page))
 
-            ret.extend(pages)
         except Exception as e:
-            logger.info("error on {}, {}".format(target, e))
-            logger.exception(e)
+            logger("error on {}".format(e))
 
-    return ret
+class ArgumentDefaultsHelpFormatter(argparse.HelpFormatter):
+    """Help message formatter which adds default values to argument help.
+
+    Only the name of this class is considered a public API. All the methods
+    provided by the class are considered an implementation detail.
+    """
+
+    def _get_help_string(self, action):
+        help = action.help
+        if '%(default)' not in action.help:
+            if action.default is not argparse.SUPPRESS:
+                defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    if action.default is not None:
+                        help += ' (default: %(default)s)'
+        return help
+
+
+
+
+def test_main():
+    dicts = load_file(settings.dict)
+    file_leak([settings.target], dicts)
+
+def work_file():
+    dicts = load_file(settings.dict)
+    targets = load_file(settings.target)
+    file_leak(targets, dicts)
+
+if __name__ == '__main__':
+    if __name__ == '__main__':  # pragma: no cover
+
+        parser = argparse.ArgumentParser(prog="fileleak",
+                                         formatter_class=ArgumentDefaultsHelpFormatter)
+
+        parser.add_argument('--version', '-V', action='version', version='%(prog)s 2.0')
+
+        parser.add_argument('--target',
+                            '-t',
+                            help='目标文件或者URL',
+                            required=True)
+
+        parser.add_argument('--dict',
+                            '-d',
+                            default='dicts/mid.txt',
+                            help='自定义字典路径',
+                            required=False)
+
+        parser.add_argument('--output',
+                            '-o',
+                            default='succ.txt',
+                            help='输出文件',
+                            required=False)
+
+        parser.add_argument('--gen-dict',
+                            action='store_true',
+                            default=False)
+
+        parser.add_argument('--concurrency-count',
+                            '-c',
+                            default=8,
+                            type=int,
+                            help='并发请求数量')
+
+        parser.add_argument('--bool-ratio',
+                            default=0.8,
+                            type=float,
+                            help='页面相似度阈值')
+
+        args = parser.parse_args()
+
+        settings.target = args.target
+        settings.dict = args.dict
+        settings.gen_dict = args.gen_dict
+        settings.bool_ratio = args.bool_ratio
+        settings.concurrency_count = args.concurrency_count
+        settings.output = args.output
+
+        t1 = time.time()
+
+        if "://" in settings.target:
+            test_main()
+        else:
+            work_file()
+
+        print(time.time() - t1)
+
+
+
 

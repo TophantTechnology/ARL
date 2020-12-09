@@ -1,9 +1,5 @@
 import tld
-import re
-import geoip2.database
 from app.config import Config
-from . import IPy
-
 
 blackdomain_list = None
 blackhexie_list = None
@@ -40,58 +36,35 @@ def is_valid_domain(domain):
     from app.utils import domain_parsed
     if "." not in domain:
         return False
-
+    if ":" in domain:
+        return False
     if domain_parsed(domain):
         return True
 
     return False
 
-#判断是否在黑名单IP内，有点不严谨
-def in_black_ips(target):
-    try:
-        for ip in Config.BLACK_IPS:
-            if "-" in target:
-                target = target.split("-")[0]
 
-            if IPy.IP(target) in IPy.IP(ip):
-                return True
-    except Exception as e:
-        logger.warn("error on check black ip {} {}".format(target, e))
+def is_in_scope(src_domain, target_domain):
+    from app.utils import get_fld
 
+    fld1 = get_fld(src_domain)
+    fld2 = get_fld(target_domain)
 
+    if not fld1 or not fld2:
+        return False
 
-def get_ip_asn(ip):
-    item = {}
-    try:
-        reader = geoip2.database.Reader(Config.asn_data_path)
-        response = reader.asn(ip)
-        item["number"] = response.autonomous_system_number
-        item["organization"] = response.autonomous_system_organization
-        reader.close()
-    except Exception as e:
-        logger.warning("{} {}".format(e, ip))
+    if fld1 != fld2:
+        return False
 
-    return item
+    if src_domain == target_domain:
+        return True
 
-def get_ip_address(ip):
-    try:
-        reader = geoip2.database.Reader(Config.city_data_path)
-        response = reader.city(ip)
-        item = {
-            "city": response.city.name,
-            "latitude": response.location.latitude,
-            "longitude": response.location.longitude,
-            "country_name": response.country.name,
-            "country_code": response.country.iso_code,
-            "region_name": response.subdivisions.most_specific.name,
-            "region_code": response.subdivisions.most_specific.iso_code,
-        }
-        reader.close()
-        return item
-
-    except Exception as e:
-        logger.warning("{} {}".format(e,ip))
-        return {}
+    return src_domain.endswith("."+target_domain)
 
 
+def is_in_scopes(domain, scopes):
+    for target_scope in scopes:
+        if is_in_scope(domain, target_scope):
+            return True
 
+    return False

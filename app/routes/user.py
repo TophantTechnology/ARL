@@ -5,7 +5,7 @@ from app import utils
 from . import  ARLResource
 from app import modules
 
-ns = Namespace('user')
+ns = Namespace('user', description="管理员登录认证")
 
 logger = get_logger()
 
