@@ -34,6 +34,19 @@ services:
           - LANG=en_US.UTF-8
           - TZ=Asia/Shanghai
 
+    scheduler:
+      image: tophant/arl:latest
+      container_name: arl_scheduler
+      restart: unless-stopped
+      depends_on:
+        - mongodb
+      volumes:
+        - ./config-docker.yaml:/code/app/config.yaml
+      entrypoint: [ "sh", "-c", "python3.6 -m app.scheduler" ]
+      environment:
+        - LANG=en_US.UTF-8
+        - TZ=Asia/Shanghai
+
     mongodb:
         image: mongo:3.6-stretch
         container_name: arl_mongodb
