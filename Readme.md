@@ -44,7 +44,9 @@ docker-compose up -d
 站点页面
 ![站点页面](./image/site.png)
 
-
+资产监控页面
+![资产监控页面](./image/monitor.png)
+详细说明可以参考：[资产分组和监控功能使用说明](https://github.com/TophantTechnology/ARL/wiki/%E8%B5%84%E4%BA%A7%E5%88%86%E7%BB%84%E5%92%8C%E7%9B%91%E6%8E%A7%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
 
 ### 任务选项说明
 | 编号 |      选项      |                                       说明                                        |
