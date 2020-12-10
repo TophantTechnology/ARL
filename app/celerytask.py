@@ -82,6 +82,10 @@ def domain_task(options):
     target = options["target"]
     task_options = options["options"]
     task_id = options["task_id"]
+    item = utils.conn_db('task').find_one({"_id": ObjectId(task_id)})
+    if not item:
+        logger.info("domain_task not found {} {}".format(target, item))
+        return
     wrap_tasks.domain_task(target, task_id, task_options)
 
 

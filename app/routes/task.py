@@ -265,8 +265,8 @@ class DeleteTask(ARLResource):
             if not task_data:
                 return utils.build_ret(ErrorMsg.NotFoundTask, {"task_id": task_id})
 
-            # if task_data["status"] not in done_status:
-            #     return utils.build_ret(ErrorMsg.TaskIsRunning, {"task_id": task_id})
+            if task_data["status"] not in done_status:
+                return utils.build_ret(ErrorMsg.TaskIsRunning, {"task_id": task_id})
 
         for task_id in task_id_list:
             utils.conn_db('task').delete_many({'_id': ObjectId(task_id)})
