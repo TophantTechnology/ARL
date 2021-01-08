@@ -111,6 +111,8 @@ class ARLTask(ARLResource):
         logger.info(task_data)
 
         target_lists = re.split(r",|\s", target)
+        # 清除空白符
+        target_lists = list(filter(None, target_lists))
         ip_target_list = []
         ret_items = []
 

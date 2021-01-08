@@ -22,3 +22,5 @@
 .book.3.qq.com
 .book.4.qq.com
 .o.tencent.com
+.o.qcloud.com
+.mur.qq.com

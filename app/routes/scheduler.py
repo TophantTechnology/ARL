@@ -40,9 +40,9 @@ class ARLScheduler(ARLResource):
 
 add_scheduler_fields = ns.model('addScheduler',  {
     "scope_id": fields.String(description="添加资产范围"),
-    "domain": fields.String(description="域名"),
+    "domain": fields.String(description="域名"),  # 多个域名可以用,隔开
     "interval": fields.Integer(description="间隔，单位是秒"),  # 单位是S
-    "name": fields.String(description="监控任务名称"),
+    "name": fields.String(description="监控任务名称"),  # 名称为空即自动生成
 })
 
 
@@ -84,11 +84,12 @@ class AddARLScheduler(ARLResource):
 
         ret_data = []
         for x in domains:
+            curr_name = name
             if not name:
-                name = "监控-{}-{}".format(scope_data["name"], x)
+                curr_name = "监控-{}-{}".format(scope_data["name"], x)
 
             job_id = app_scheduler.add_job(domain=x, scope_id=scope_id,
-                                           options=None, interval=interval, name=name)
+                                           options=None, interval=interval, name=curr_name)
             ret_data.append({"domain": x, "scope_id": scope_id, "job_id": job_id})
 
         return utils.build_ret(ErrorMsg.Success, ret_data)

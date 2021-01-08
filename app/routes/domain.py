@@ -32,3 +32,19 @@ class ARLDomain(ARLResource):
         data = self.build_data(args=args, collection='domain')
 
         return data
+
+
+@ns.route('/export/')
+class ARLDomainExport(ARLResource):
+    parser = get_arl_parser(base_search_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        域名导出
+        """
+        args = self.parser.parse_args()
+        response = self.send_export_file(args=args, _type="domain")
+
+        return response

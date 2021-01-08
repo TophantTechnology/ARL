@@ -12,7 +12,7 @@ from .buildDomainInfo import build_domain_info
 from .searchEngines import baidu_search, bing_search, doge_search
 from .siteUrlSpider import site_spider, site_spider_thread
 from .webAnalyze import web_analyze
-from .fofoClient import fetch_ip_bycert
+from .fofaClient import fetch_ip_bycert
 from .fetchCert import fetch_cert
 from .fileLeak import file_leak
 from .pageFetch import page_fetch

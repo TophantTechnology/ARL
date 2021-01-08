@@ -10,8 +10,8 @@ UA = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like G
 
 
 proxies = {
-    'https': "http://10.0.86.147:8080",
-    'http': "http://10.0.86.147:8080"
+    'https': "http://127.0.0.1:8080",
+    'http': "http://127.0.0.1:8080"
 }
 
 SET_PROXY = False

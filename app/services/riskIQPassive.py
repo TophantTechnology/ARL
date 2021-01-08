@@ -25,6 +25,11 @@ class RiskIQPassive():
         for item in data['subdomains']:
             item = item.strip("*.")
             domain = "{}.{}".format(item, target)
+
+            #删除掉过长的域名
+            if len(domain) >= Config.DOMAIN_MAX_LEN:
+                continue
+
             if utils.domain_parsed(domain):
                 subdomains.append(domain)
 

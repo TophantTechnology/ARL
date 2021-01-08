@@ -57,6 +57,8 @@ class ARLAssetScope(ARLResource):
             black_scope_array = re.split(r",|\s", black_scope)
 
         scope_array = re.split(r",|\s", scope)
+        # 清除空白符
+        scope_array = list(filter(None, scope_array))
         for x in scope_array:
             if not utils.is_valid_domain(x):
                 return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": x})
@@ -164,6 +166,8 @@ class AddARLAssetScope(ARLResource):
         scope = str(args.pop('scope', "")).lower()
 
         scope_array = re.split(r",|\s", scope)
+        # 清除空白符
+        scope_array = list(filter(None, scope_array))
         if not scope_array:
             return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": ""})
 

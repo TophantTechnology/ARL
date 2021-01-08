@@ -2,6 +2,7 @@ from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
 
+
 ns = Namespace('site', description="站点信息")
 
 logger = get_logger()
@@ -38,3 +39,17 @@ class ARLSite(ARLResource):
         return data
 
 
+@ns.route('/export/')
+class ARLSiteExport(ARLResource):
+    parser = get_arl_parser(base_search_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        站点导出
+        """
+        args = self.parser.parse_args()
+        response = self.send_export_file(args=args, _type="site")
+
+        return response

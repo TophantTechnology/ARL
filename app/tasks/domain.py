@@ -37,6 +37,10 @@ class DomainBrute():
             if not utils.domain_parsed(current_domain):
                 continue
 
+            # 删除掉过长的域名
+            if len(current_domain) >= Config.DOMAIN_MAX_LEN:
+                continue
+
             if utils.check_domain_black(current_domain):
                 continue
 
@@ -230,7 +234,7 @@ class AltDNS():
     def _fetch_domains(self):
         base_len = len(self.base_domain)
         for item in self.doamin_info_list:
-            if not item.domain.endswith("."+ self.base_domain):
+            if not item.domain.endswith("."+self.base_domain):
                 continue
 
             if utils.check_domain_black("a."+ item.domain):

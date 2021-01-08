@@ -27,15 +27,12 @@ class ObjectDict(dict):
 
 UA = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
 
-
-proxies = {
-    'https': "http://10.0.86.147:8080",
-    'http': "http://10.0.86.147:8080"
-}
-
-SET_PROXY = False
-
 def http_req(url, method = 'get', **kwargs):
+    proxies = {
+        'https': settings.proxy,
+        'http': settings.proxy
+    }
+
     kwargs.setdefault('verify', False)
     kwargs.setdefault('timeout', (10.1, 30.1))
     kwargs.setdefault('allow_redirects', False)
@@ -45,7 +42,7 @@ def http_req(url, method = 'get', **kwargs):
 
     kwargs["headers"] = headers
 
-    if SET_PROXY:
+    if settings.proxy:
         kwargs["proxies"] = proxies
 
     conn =   getattr(requests, method)(url, **kwargs)
@@ -122,7 +119,8 @@ class BaseThread(object):
             deque.append(t1)
 
         for t in list(deque):
-            t.join()
+            while t.is_alive():
+                time.sleep(0.2)
 
 
 
@@ -694,63 +692,68 @@ def work_file():
     targets = load_file(settings.target)
     file_leak(targets, dicts)
 
-if __name__ == '__main__':
-    if __name__ == '__main__':  # pragma: no cover
 
-        parser = argparse.ArgumentParser(prog="fileleak",
-                                         formatter_class=ArgumentDefaultsHelpFormatter)
+if __name__ == '__main__':  # pragma: no cover
 
-        parser.add_argument('--version', '-V', action='version', version='%(prog)s 2.0')
+    parser = argparse.ArgumentParser(prog="fileleak",
+                                     formatter_class=ArgumentDefaultsHelpFormatter)
 
-        parser.add_argument('--target',
-                            '-t',
-                            help='目标文件或者URL',
-                            required=True)
+    parser.add_argument('--version', '-V', action='version', version='%(prog)s 2.1')
 
-        parser.add_argument('--dict',
-                            '-d',
-                            default='dicts/mid.txt',
-                            help='自定义字典路径',
-                            required=False)
+    parser.add_argument('--target',
+                        '-t',
+                        help='目标文件或者URL',
+                        required=True)
 
-        parser.add_argument('--output',
-                            '-o',
-                            default='succ.txt',
-                            help='输出文件',
-                            required=False)
+    parser.add_argument('--dict',
+                        '-d',
+                        default='dicts/mid.txt',
+                        help='自定义字典路径',
+                        required=False)
 
-        parser.add_argument('--gen-dict',
-                            action='store_true',
-                            default=False)
+    parser.add_argument('--output',
+                        '-o',
+                        default='succ.txt',
+                        help='输出文件',
+                        required=False)
 
-        parser.add_argument('--concurrency-count',
-                            '-c',
-                            default=8,
-                            type=int,
-                            help='并发请求数量')
+    parser.add_argument('--gen-dict',
+                        action='store_true',
+                        default=False)
 
-        parser.add_argument('--bool-ratio',
-                            default=0.8,
-                            type=float,
-                            help='页面相似度阈值')
+    parser.add_argument('--concurrency-count',
+                        '-c',
+                        default=8,
+                        type=int,
+                        help='并发请求数量')
 
-        args = parser.parse_args()
+    parser.add_argument('--bool-ratio',
+                        default=0.8,
+                        type=float,
+                        help='页面相似度阈值')
 
-        settings.target = args.target
-        settings.dict = args.dict
-        settings.gen_dict = args.gen_dict
-        settings.bool_ratio = args.bool_ratio
-        settings.concurrency_count = args.concurrency_count
-        settings.output = args.output
+    parser.add_argument('--proxy',
+                        "-x",
+                        help='代理地址')
 
-        t1 = time.time()
+    args = parser.parse_args()
 
-        if "://" in settings.target:
-            test_main()
-        else:
-            work_file()
+    settings.target = args.target
+    settings.dict = args.dict
+    settings.gen_dict = args.gen_dict
+    settings.bool_ratio = args.bool_ratio
+    settings.concurrency_count = args.concurrency_count
+    settings.output = args.output
+    settings.proxy = args.proxy
 
-        print(time.time() - t1)
+    t1 = time.time()
+
+    if "://" in settings.target:
+        test_main()
+    else:
+        work_file()
+
+    print(time.time() - t1)
 
 
 

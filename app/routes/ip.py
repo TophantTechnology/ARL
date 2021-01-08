@@ -34,3 +34,19 @@ class ARLIP(ARLResource):
         data = self.build_data(args=args, collection='ip')
 
         return data
+
+
+@ns.route('/export/')
+class ARLIPExport(ARLResource):
+    parser = get_arl_parser(base_search_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        端口导出
+        """
+        args = self.parser.parse_args()
+        response = self.send_export_file(args=args, _type="ip")
+
+        return response

@@ -55,6 +55,8 @@ class Config(object):
     FILE_LEAK_TOP_2k = os.path.join(basedir, 'dicts/file_top_2000.txt')
     FILE_LEAK_TOP_200 = os.path.join(basedir, 'dicts/file_top_200.txt')
 
+    DOMAIN_MAX_LEN = 30
+
 
 try:
     with open(os.path.join(basedir, 'config.yaml')) as f:

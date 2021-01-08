@@ -3,6 +3,9 @@ from flask_restplus import Resource, Api, reqparse, fields
 from app import modules
 from bson.objectid import ObjectId
 from datetime import datetime
+from urllib.parse import quote
+from flask import make_response
+import time
 
 from app.utils import conn_db as conn
 base_query_fields = {
@@ -152,6 +155,34 @@ class ARLResource(Resource):
         ret['order'] = orderby_list
         return ret
 
+    def send_export_file(self, args, _type):
+        _type_map_field_name = {
+            "site": "site",
+            "domain": "domain",
+            "ip": "ip",
+            "asset_site": "site",
+            "asset_domain": "domain",
+            "asset_ip": "ip",
+            "url": "url"
+        }
+        data = self.build_data(args=args, collection=_type)["items"]
+        items_set = set()
+        for item in data:
+            filed_name = _type_map_field_name.get(_type, "")
+            if filed_name and filed_name in item:
+                if filed_name == "ip":
+                    curr_ip = item[filed_name]
+                    for port_info in item.get("port_info", []):
+                        items_set.add("{}:{}".format(curr_ip, port_info["port_id"]))
+                else:
+                    items_set.add(item[filed_name])
+
+        response = make_response("\r\n".join(items_set))
+        filename = "{}_{}_{}.txt".format(_type, len(items_set), int(time.time()))
+        response.headers['Content-Type'] = 'application/octet-stream'
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        response.headers["Content-Disposition"] = "attachment; filename={}".format(quote(filename))
+        return response
 
 def get_arl_parser(model, location = 'args'):
     r = ARLResource()

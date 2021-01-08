@@ -2,7 +2,7 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
@@ -27,8 +27,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@master
-      
-      - name: Download 
+
+      - name: Download
         run: |
           pwd
           mkdir -p docker/GeoLite2/
@@ -45,9 +45,9 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t ${IMAGE_URL}:${GITHUB_SHA} -f docker/worker/Dockerfile .
-          
+
       - name: Publish
         run: |
           docker push ${IMAGE_URL}:${GITHUB_SHA}
-  
-      
+
+

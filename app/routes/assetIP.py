@@ -42,6 +42,22 @@ class ARLAssetIP(ARLResource):
         return data
 
 
+@ns.route('/export/')
+class ARLAssetIPExport(ARLResource):
+    parser = get_arl_parser(base_search_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        资产分组端口导出
+        """
+        args = self.parser.parse_args()
+        response = self.send_export_file(args=args, _type="asset_ip")
+
+        return response
+
+
 delete_ip_fields = ns.model('deleteAssetIP',  {
     '_id': fields.List(fields.String(required=True, description="数据_id"))
 })

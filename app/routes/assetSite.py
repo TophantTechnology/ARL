@@ -81,6 +81,23 @@ class ARLDomain(ARLResource):
         return utils.build_ret(ErrorMsg.Success, {"site": url})
 
 
+@ns.route('/export/')
+class ARLSiteExport(ARLResource):
+    parser = get_arl_parser(base_search_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        资产分组站点导出
+        """
+        args = self.parser.parse_args()
+        response = self.send_export_file(args=args, _type="asset_site")
+
+        return response
+
+
+
 def add_site_to_scope(site, scope_id):
     fetch_site_data = services.fetch_site([site])
     web_analyze_data = services.web_analyze([site])

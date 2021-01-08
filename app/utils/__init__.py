@@ -166,6 +166,8 @@ def build_ret(error, data):
         for k in data:
             if k.endswith("id"):
                 continue
+            if not data[k]:
+                continue
             msg += " {}:{}".format(k, data[k])
 
     ret["message"] = msg

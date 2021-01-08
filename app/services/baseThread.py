@@ -1,5 +1,6 @@
 import threading
 import collections
+import time
 import requests.exceptions
 from lxml import etree
 from app import utils
@@ -53,6 +54,8 @@ class BaseThread(object):
             deque.append(t1)
 
         for t in list(deque):
-            t.join()
+            while t.is_alive():
+                time.sleep(0.2)
+
 
 

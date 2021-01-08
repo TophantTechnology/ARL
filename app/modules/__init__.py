@@ -160,6 +160,10 @@ error_map = {
         "message": "站点已在指定资产中",
         "code": 806,
     },
+    "DomainNotFoundNotInScope": {
+            "message": "没有发现可以添加的域名",
+            "code": 807,
+    },
     "SchedulerStatusNotRunning": {
         "message": "监控任务非运行状态",
         "code": 901,
@@ -198,6 +202,7 @@ class ErrorMsg:
     SiteURLNotDomain = error_map["SiteURLNotDomain"]
     SchedulerStatusNotRunning = error_map["SchedulerStatusNotRunning"]
     SchedulerStatusNotStop = error_map["SchedulerStatusNotStop"]
+    DomainNotFoundNotInScope = error_map["DomainNotFoundNotInScope"]
 
 
 
