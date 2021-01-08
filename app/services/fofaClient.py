@@ -5,7 +5,8 @@ from app import utils
 from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
-class FofoClient:
+
+class FofaClient:
     def __init__(self, email, key, page_size = 9999):
         self.email = email
         self.key = key
@@ -48,7 +49,7 @@ def fetch_ip_bycert(cert, size=9999):
     ip_set = set()
 
     try:
-        client = FofoClient(Config.FOFA_EMAIL, Config.FOFA_KEY, page_size=size)
+        client = FofaClient(Config.FOFA_EMAIL, Config.FOFA_KEY, page_size=size)
         items = client.search_cert(cert)
         for item in items:
             ip_set.add(item[1])
