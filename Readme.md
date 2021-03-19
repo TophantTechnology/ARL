@@ -11,6 +11,8 @@
 旨在快速侦察与目标关联的互联网资产，构建基础资产信息库。
 协助甲方安全团队或者渗透测试人员有效侦察和检索资产，发现存在的薄弱点和攻击面。
 
+在开始使用之前，请务必阅读并同意[免责声明](Disclaimer.md)中的条款，否则请勿下载安装使用本系统。
+
 ### 系统要求
 
 目前暂不支持Windows。Linux和MAC建议采用Docker运行，系统配置最低2核4G。  
@@ -32,7 +34,7 @@ docker-compose up -d
 详细说明可以参考: [Docker 环境安装 ARL](https://github.com/TophantTechnology/ARL/wiki/Docker-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85-ARL)
 
 ### 截图
-登录页面，默认端口5003, 默认用户名密码admin/arlpass  
+登录页面，默认端口5003 (https), 默认用户名密码admin/arlpass  
 ![登录页面](./image/login.png)
 
 任务页面
@@ -73,6 +75,8 @@ docker-compose up -d
 
 ### 配置参数说明
 
+Docker环境配置文件路径 `docker/config-docker.yaml`
+
 |       配置        |                 说明                 |
 | ----------------- | ------------------------------------ |
 | CELERY.BROKER_URL | rabbitmq连接信息                      |
@@ -89,9 +93,9 @@ docker-compose up -d
 
 
 
-### 密码重置
+### 忘记密码重置
 
-可以执行下面的命令，然后使用 `admin/admin123` 就可以登录了。
+当忘记了登录密码，可以执行下面的命令，然后使用 `admin/admin123` 就可以登录了。
 ```
 docker exec -ti arl_mongodb mongo -u admin -p admin
 use arl
@@ -119,9 +123,9 @@ sudo apt-get install xfonts-wqy libfontconfig
 ```
 
 
-### 安装 Nmap
+#### 安装 Nmap
 
-#### Ubuntu
+##### Ubuntu
 ```
 apt remove nmap
 apt remove ndiff
@@ -130,12 +134,12 @@ wget https://nmap.org/dist/nmap-7.80-1.x86_64.rpm
 alien -i nmap-7.80-1.x86_64.rpm
 ```
 
-#### CentOS
+##### CentOS
 ```
 rpm -vhU https://nmap.org/dist/nmap-7.80-1.x86_64.rpm
 ```
 
-#### 配置RabbitMQ
+##### 配置RabbitMQ
 
 ```
 rabbitmqctl add_user arl arlpassword
@@ -144,7 +148,7 @@ rabbitmqctl set_user_tags arl arltag
 rabbitmqctl set_permissions -p arlv2host arl ".*" ".*" ".*"
 ```
 
-### 本地编译Docker镜像 并启动
+#### 本地编译Docker镜像 并启动
 
 ```
 docker build  -t arl_worker:v2 -f docker/worker/Dockerfile .
@@ -153,11 +157,14 @@ pip install docker-compose
 docker-compose up -d
 ```
 
-### 配置GeoIP 数据库
+#### 配置GeoIP 数据库
 
 由于官方政策更新请前往[maxmind](https://dev.maxmind.com/geoip/geoip2/geolite2/) 注册下载GeoLite2-City.tar.gz，GeoLite2-ASN.tar.gz 解压。  
 在config.yaml中配置好相关路径
 
+### FAQ
+
+请访问如下链接[FAQ](https://github.com/TophantTechnology/ARL/wiki/Docker-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85-ARL#faq)
 
 ### 写在最后
 

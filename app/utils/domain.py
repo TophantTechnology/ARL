@@ -68,3 +68,16 @@ def is_in_scopes(domain, scopes):
             return True
 
     return False
+
+
+def cut_first_name(domain):
+    """将子域名剔除前面一节名称"""
+    domain_parts, non_zero_i, _ = tld.utils.process_url(domain, fix_protocol=True, fail_silently=True)
+    if not domain_parts:
+        return
+
+    if non_zero_i == 1:
+        return
+
+    item = ".".join(domain_parts[1:])
+    return item

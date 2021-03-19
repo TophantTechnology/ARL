@@ -2,7 +2,7 @@ from bson.objectid import  ObjectId
 import time
 from app import  services
 from app.modules import ScanPortType, TaskStatus, CollectSource
-from app.services import fetchCert
+from app.services import fetchCert, run_risk_cruising, run_sniffer
 from app import  utils
 logger = utils.get_logger()
 from app.config import Config
@@ -36,6 +36,7 @@ class IPTask():
         self.web_analyze_map = {}
         self.cert_map = {}
         self.service_info_list = []
+        self.npoc_service_target_set = set()
 
     def port_scan(self):
         scan_port_map = {
@@ -219,6 +220,39 @@ class IPTask():
 
                 utils.conn_db('fileleak').insert_one(item)
 
+    def risk_cruising(self):
+        """运行PoC任务"""
+        poc_config = self.options.get("poc_config", [])
+        plugins = []
+        for info in poc_config:
+            if not info.get("enable"):
+                continue
+            plugins.append(info["plugin_name"])
+
+        result = run_risk_cruising(plugins=plugins, targets=self.site_list)
+        for item in result:
+            item["task_id"] = self.task_id
+            item["save_date"] = utils.curr_date()
+            utils.conn_db('vuln').insert_one(item)
+
+    def npoc_service_detection(self):
+        targets = []
+        for ip_info in self.ip_info_list:
+            for port_info in ip_info["port_info"]:
+                if port_info["port_id"] == 80:
+                    continue
+                if port_info["port_id"] == 443:
+                    continue
+                targets.append("{}:{}".format(ip_info["ip"], port_info["port_id"]))
+
+        result = run_sniffer(targets)
+        for item in result:
+            self.npoc_service_target_set.add(item["target"])
+            item["task_id"] = self.task_id
+            item["save_date"] = utils.curr_date()
+            utils.conn_db('npoc_service').insert_one(item)
+
+
     def site_spider(self):
         entry_urls_list = []
         for site in self.site_list:
@@ -242,6 +276,24 @@ class IPTask():
                 item.update(page_map[url])
 
                 utils.conn_db('url').insert_one(item)
+
+    def brute_config(self):
+        plugins = []
+        brute_config = self.options.get("brute_config")
+        for x in brute_config:
+            if not x.get("enable"):
+                continue
+            plugins.append(x["plugin_name"])
+
+        if not plugins:
+            return
+        targets = self.site_list.copy()
+        targets += list(self.npoc_service_target_set)
+        result = run_risk_cruising(targets=targets, plugins=plugins)
+        for item in result:
+            item["task_id"] = self.task_id
+            item["save_date"] = utils.curr_date()
+            utils.conn_db('vuln').insert_one(item)
 
     def run(self):
         self.update_task_field("start_time", utils.curr_date())
@@ -302,6 +354,29 @@ class IPTask():
             elapse = time.time() - t1
             self.update_services("site_spider", elapse)
 
+        """风险PoC任务"""
+        if self.options.get("poc_config"):
+            self.update_task_field("status", "PoC")
+            t1 = time.time()
+            self.risk_cruising()
+            elapse = time.time() - t1
+            self.update_services("poc_config", elapse)
+
+        """服务识别（python）实现"""
+        if self.options.get("npoc_service_detection"):
+            self.update_task_field("status", "npoc_service_detection")
+            t1 = time.time()
+            self.npoc_service_detection()
+            elapse = time.time() - t1
+            self.update_services("npoc_service_detection", elapse)
+
+        """弱口令爆破服务"""
+        if self.options.get("brute_config"):
+            self.update_task_field("status", "weak_brute")
+            t1 = time.time()
+            self.brute_config()
+            elapse = time.time() - t1
+            self.update_services("weak_brute", elapse)
 
         '''文件泄露'''
         if self.options.get("file_leak"):
@@ -310,8 +385,6 @@ class IPTask():
             self.file_leak()
             elapse = time.time() - t1
             self.update_services("file_leak", elapse)
-
-
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())

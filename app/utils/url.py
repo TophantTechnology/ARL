@@ -121,6 +121,15 @@ def normal_url(url):
     return ret_url
 
 
+def cut_filename(url):
+    o = urlparse(url)
+    dir_path = os.path.dirname(o.path)
+    dir_path = dir_path.rstrip("/")
+    if not o.netloc:
+        return ""
+    ret_url = "{}://{}{}".format(o.scheme, o.netloc, dir_path)
+    return ret_url
+
 
 def same_netloc(url1, url2):
     h1 = get_hostname(url1)

@@ -8,7 +8,7 @@ from app.config import Config
 from app import  services
 from app import  modules
 from app.modules import ScanPortType, DomainDictType, CollectSource, TaskStatus
-from app.services import fetchCert
+from app.services import fetchCert, run_risk_cruising, run_sniffer
 from bson.objectid import  ObjectId
 '''
 域名爆破
@@ -435,7 +435,6 @@ site_capture
 file_leak
 alt_dns
 github_search_domain
-url_spider
 ssl_cert
 fetch_api_path
 fofa_search
@@ -467,6 +466,8 @@ class DomainTask():
         self.service_info_list = []
         #用来区分是正常任务还是监控任务
         self.task_tag = "task"
+
+        self.npoc_service_target_set = set()
 
         scan_port_map = {
             "test": ScanPortType.TEST,
@@ -1007,6 +1008,82 @@ class DomainTask():
             elapse = time.time() - t1
             self.update_services("file_leak", elapse)
 
+    def risk_cruising(self):
+        """运行PoC任务"""
+        poc_config = self.options.get("poc_config", [])
+        plugins = []
+        for info in poc_config:
+            if not info.get("enable"):
+                continue
+            plugins.append(info["plugin_name"])
+
+        result = run_risk_cruising(plugins=plugins, targets=self.site_list)
+        for item in result:
+            item["task_id"] = self.task_id
+            item["save_date"] = utils.curr_date()
+            utils.conn_db('vuln').insert_one(item)
+
+    def npoc_service_detection(self):
+        targets = []
+        for ip_info in self.ip_info_list:
+            for port_info in ip_info.port_info_list:
+                if port_info.port_id == 80:
+                    continue
+                if port_info.port_id == 443:
+                    continue
+                targets.append("{}:{}".format(ip_info.ip, port_info.port_id))
+
+        result = run_sniffer(targets)
+        for item in result:
+            self.npoc_service_target_set.add(item["target"])
+            item["task_id"] = self.task_id
+            item["save_date"] = utils.curr_date()
+            utils.conn_db('npoc_service').insert_one(item)
+
+    def start_poc_run(self):
+        """poc run"""
+        """服务识别（python）实现"""
+        if self.options.get("npoc_service_detection"):
+            self.update_task_field("status", "npoc_service_detection")
+            t1 = time.time()
+            self.npoc_service_detection()
+            elapse = time.time() - t1
+            self.update_services("npoc_service_detection", elapse)
+
+        """弱口令爆破服务"""
+        if self.options.get("brute_config"):
+            self.update_task_field("status", "weak_brute")
+            t1 = time.time()
+            self.brute_config()
+            elapse = time.time() - t1
+            self.update_services("weak_brute", elapse)
+
+        """风险PoC任务"""
+        if self.options.get("poc_config"):
+            self.update_task_field("status", "PoC")
+            t1 = time.time()
+            self.risk_cruising()
+            elapse = time.time() - t1
+            self.update_services("poc_config", elapse)
+
+    def brute_config(self):
+        plugins = []
+        brute_config = self.options.get("brute_config")
+        for x in brute_config:
+            if not x.get("enable"):
+                continue
+            plugins.append(x["plugin_name"])
+
+        if not plugins:
+            return
+        targets = self.site_list.copy()
+        targets += list(self.npoc_service_target_set)
+        result = run_risk_cruising(targets=targets, plugins=plugins)
+        for item in result:
+            item["task_id"] = self.task_id
+            item["save_date"] = utils.curr_date()
+            utils.conn_db('vuln').insert_one(item)
+
     def run(self):
 
         self.update_task_field("start_time", utils.curr_date())
@@ -1016,6 +1093,8 @@ class DomainTask():
         self.start_ip_fetch()
 
         self.start_site_fetch()
+
+        self.start_poc_run()
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())
@@ -1038,6 +1117,7 @@ def add_domain_to_scope(domain, scope_id):
         'start_time': '-',
         'status': 'waiting',
         'type': 'domain',
+        "task_tag": "task",
         'options': {
             'domain_brute': True,
             'domain_brute_type': 'test',

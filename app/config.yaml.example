@@ -8,24 +8,40 @@ MONGO:
   DB : 'arl'
 
 
+#演示帐号有查询额度限制，请前往 https://community.riskiq.com/ 注册自己的key并替换
 RISKIQ:
   EMAIL: "n1un1u2019@qq.com"
   KEY: "03da3c29cce5152a536bae332f7b03a288154b37a13b93921225d3ade49c9b4c"
 
-
+#GeoIP 数据库文件配置项
 GEOIP:
   CITY: '/data/GeoLite2/GeoLite2-City.mmdb'
   ASN: '/data/GeoLite2/GeoLite2-ASN.mmdb'
 
 
-
+#Fofa API 配置项
 FOFA:
   EMAIL: ""
   KEY: ""
 
+#钉钉消息推送配置
+#钉钉添加机器人，请查看
+#https://github.com/TophantTechnology/ARL/wiki/ARL%202.3%20%E6%96%B0%E6%B7%BB%E5%8A%A0%E5%8A%9F%E8%83%BD%E8%AF%B4%E6%98%8E
+DINGDING:
+  SECRET: ""
+  ACCESS_TOKEN: ""
+
+#邮件发送配置
+EMAIL:
+  HOST: ""
+  PORT: ""
+  USERNAME: ""
+  PASSWORD: ""
+  TO: ""
 
 ARL:
   AUTH: true
+  #API 认证key, 可以访问api/doc查看文档
   API_KEY: ""
   BLACK_IPS:
     - 127.0.0.0/8

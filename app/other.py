@@ -208,4 +208,4 @@ def update_asset():
             if cnt % 100 == 0:
                 print(cnt)
 
-update_asset()
+

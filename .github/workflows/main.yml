@@ -28,13 +28,24 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@master
 
-      - name: Download
+      - name: Download GeoLite2
         run: |
           pwd
           mkdir -p docker/GeoLite2/
           wget -O docker/GeoLite2/GeoLite2-ASN.mmdb  https://github.com/1c3z/arl_files/raw/master/GeoLite2-ASN.mmdb
           wget -O docker/GeoLite2/GeoLite2-City.mmdb  https://github.com/1c3z/arl_files/raw/master/GeoLite2-City.mmdb
           ls -al docker/GeoLite2
+
+      - name: Download ncrack
+        run: |
+          wget -O docker/ncrack  https://github.com/1c3z/arl_files/raw/master/ncrack
+          wget -O docker/ncrack-services https://github.com/1c3z/arl_files/blob/master/ncrack-services
+          chmod +x docker/ncrack
+          chmod +x docker/ncrack-services
+
+      - name: Download NPoC
+        run: |
+          git clone https://github.com/1c3z/ARL-NPoC docker/ARL-NPoC
 
       # Runs a single command using the runners shell
       - name: Login Registry

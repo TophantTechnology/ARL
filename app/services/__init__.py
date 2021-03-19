@@ -18,3 +18,4 @@ from .fileLeak import file_leak
 from .pageFetch import page_fetch
 from .webAppIdentify import web_app_identify
 from .syncAsset import sync_asset
+from .npoc import run_risk_cruising, run_sniffer

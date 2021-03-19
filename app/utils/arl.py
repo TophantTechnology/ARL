@@ -8,7 +8,6 @@ def get_task_ids(domain):
     for item in conn_db('task').find(query):
         task_ids.append(str(item["_id"]))
 
-
     return task_ids
 
 
@@ -59,6 +58,7 @@ def scope_data_by_id(scope_id):
     item = conn_db('asset_scope').find_one(query)
 
     return item
+
 
 def get_scope_ids(domain):
     query = {"scope_array": domain}

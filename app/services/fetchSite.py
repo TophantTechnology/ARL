@@ -1,13 +1,14 @@
+import time
 from pyquery import PyQuery as pq
 import binascii
 from urllib.parse import urljoin
 from urllib3.util.url import get_host
 import mmh3
-from app import  utils
+from app import utils
 from .baseThread import BaseThread
 logger = utils.get_logger()
 from app.utils import http_req
-import  time
+
 
 class FetchSite(BaseThread):
     def __init__(self, sites, concurrency=6):
@@ -60,8 +61,8 @@ def fetch_favicon(url):
     return  f.run()
 
 
-def fetch_site(sites, concurrency = 15):
-    f = FetchSite(sites, concurrency = concurrency)
+def fetch_site(sites, concurrency=15):
+    f = FetchSite(sites, concurrency=concurrency)
     return f.run()
 
 
@@ -101,17 +102,12 @@ class FetchFavicon():
 
         return result
 
-
     def get_favicon_data(self, favicon_url):
         conn = http_req(favicon_url)
-        if "/favicon.ico" in favicon_url:
-            if conn.headers.get("Content-Type", "") == "image/x-icon":
-                data = self.encode_bas64_lines(conn.content)
-                return data
-        else:
-            if "image" in conn.headers.get("Content-Type", ""):
-                data = self.encode_bas64_lines(conn.content)
-                return data
+
+        if "image" in conn.headers.get("Content-Type", ""):
+            data = self.encode_bas64_lines(conn.content)
+            return data
 
     def encode_bas64_lines(self, s):
         """Encode a string into multiple lines of base-64 data."""

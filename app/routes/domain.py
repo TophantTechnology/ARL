@@ -11,7 +11,7 @@ base_search_fields = {
     'record': fields.String(description="解析值"),
     'type': fields.String(description="解析类型"),
     'ips': fields.String(description="IP"),
-    'source': fields.String(description="是否开启"),
+    'source': fields.String(description="来源"),
     "task_id": fields.String(description="任务ID")
 }
 

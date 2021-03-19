@@ -31,7 +31,8 @@ def arl_task(options):
         CeleryAction.DOMAIN_EXEC_TASK: domain_exec,
         CeleryAction.DOMAIN_TASK: domain_task,
         CeleryAction.IP_TASK: ip_task,
-        CeleryAction.ADD_DOMAIN_TO_SCOPE: add_domain_to_scope
+        CeleryAction.ADD_DOMAIN_TO_SCOPE: add_domain_to_scope,
+        CeleryAction.RUN_RISK_CRUISING: run_risk_cruising
     }
     logger.info(options)
     start_time = time.time()
@@ -101,3 +102,8 @@ def add_domain_to_scope(options):
     domain = options["domain"]
     scope_id = options["scope_id"]
     wrap_tasks.add_domain_to_scope(domain=domain, scope_id=scope_id)
+
+
+def run_risk_cruising(options):
+    task_id = options["task_id"]
+    wrap_tasks.run_risk_cruising(task_id)

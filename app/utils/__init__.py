@@ -157,6 +157,12 @@ def gen_filename(site):
 
 
 def build_ret(error, data):
+    if isinstance(error, str):
+        error = {
+            "message": error,
+            "code": 999,
+        }
+
     ret = {}
     ret.update(error)
     ret["data"] = data
@@ -168,7 +174,8 @@ def build_ret(error, data):
                 continue
             if not data[k]:
                 continue
-            msg += " {}:{}".format(k, data[k])
+            if isinstance(data[k], str):
+                msg += " {}:{}".format(k, data[k])
 
     ret["message"] = msg
     return ret
@@ -195,7 +202,7 @@ def exit_gracefully(signum, frame):
 
 
 from .user import user_login, user_login_header, auth, user_logout, change_pass
-
+from .push import message_push
 
 
 

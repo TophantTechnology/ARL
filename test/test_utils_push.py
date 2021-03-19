@@ -1,0 +1,63 @@
+import unittest
+from app import services
+from app.utils import push
+
+
+class TestUtilsPush(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestUtilsPush, self).__init__(*args, **kwargs)
+        self._site_data = None
+        self._domain_data = None
+
+    @property
+    def site_data(self):
+        if self._site_data is None:
+            sites = ["https://www.baidu.com", "https://www.qq.com/"]
+            site_data = services.fetch_site(sites, concurrency=2)
+            self._site_data = site_data
+
+        return self._site_data
+
+    @property
+    def domain_data(self):
+        if self._domain_data is None:
+            _domain_data = services.build_domain_info(["www.baidu.com", "www.qq.com"])
+            domain_data = []
+            for x in _domain_data:
+                domain_data.append(x.dump_json(flag=False))
+            self._domain_data = domain_data
+
+        return self._domain_data
+
+    def test_message_push(self):
+        asset_map = {
+            "site": self.site_data,
+            "domain": self.domain_data,
+            "task_name": "灯塔测试"
+        }
+        asset_counter = {
+            "site": 10,
+            "domain": 10
+        }
+        p = push.Push(asset_map=asset_map, asset_counter=asset_counter)
+        ret = p.push_dingding()
+        self.assertTrue(ret)
+
+    def test_push_email(self):
+        asset_map = {
+            "site": self.site_data,
+            "domain": self.domain_data,
+            "task_name": "灯塔测试"
+        }
+        asset_counter = {
+            "site": 10,
+            "domain": 10
+        }
+
+        p = push.Push(asset_map=asset_map, asset_counter=asset_counter)
+        ret = p.push_email()
+        self.assertTrue(ret)
+
+
+if __name__ == '__main__':
+    unittest.main()
