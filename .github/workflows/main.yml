@@ -7,8 +7,6 @@ on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -39,9 +37,8 @@ jobs:
       - name: Download ncrack
         run: |
           wget -O docker/ncrack  https://github.com/1c3z/arl_files/raw/master/ncrack
-          wget -O docker/ncrack-services https://github.com/1c3z/arl_files/blob/master/ncrack-services
+          wget -O docker/ncrack-services https://github.com/1c3z/arl_files/raw/master/ncrack-services
           chmod +x docker/ncrack
-          chmod +x docker/ncrack-services
 
       - name: Download NPoC
         run: |
