@@ -177,6 +177,30 @@ class ARLResource(Resource):
                 else:
                     items_set.add(item[filed_name])
 
+        return self.send_file(items_set, _type)
+
+    def send_batch_export_file(self, task_id_list,  _type):
+        _type_map_field_name = {
+            "site": "site",
+            "domain": "domain",
+            "ip": "ip",
+            "url": "url"
+        }
+        items_set = set()
+        filed_name = _type_map_field_name.get(_type, "")
+
+        for task_id in task_id_list:
+            if not filed_name:
+                continue
+            if not task_id:
+                continue
+            query = {"task_id": task_id}
+            items = conn(_type).distinct(filed_name, query)
+            items_set |= set(items)
+
+        return self.send_file(items_set, _type)
+
+    def send_file(self, items_set, _type):
         response = make_response("\r\n".join(items_set))
         filename = "{}_{}_{}.txt".format(_type, len(items_set), int(time.time()))
         response.headers['Content-Type'] = 'application/octet-stream'
@@ -184,9 +208,10 @@ class ARLResource(Resource):
         response.headers["Content-Disposition"] = "attachment; filename={}".format(quote(filename))
         return response
 
-def get_arl_parser(model, location = 'args'):
+def get_arl_parser(model, location='args'):
     r = ARLResource()
     return r.get_parser(model, location)
+
 
 from .task import ns as task_ns
 from .domain import ns as domain_ns
@@ -204,3 +229,8 @@ from .assetDomain import ns as asset_domain_ns
 from .assetIP import ns as asset_ip_ns
 from .assetSite import ns as asset_site_ns
 from .scheduler import ns as scheduler_ns
+from .poc import ns as poc_ns
+from .vuln import ns as vuln_ns
+from .batchExport import ns as batch_export_ns
+from .policy import ns as policy_ns
+from .npoc_service import ns as npoc_service_ns

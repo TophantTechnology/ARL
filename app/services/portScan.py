@@ -4,6 +4,7 @@ from app.config import Config
 
 logger = utils.get_logger()
 
+
 class PortScan:
     def __init__(self, targets, ports=None, service_detect = False, os_detect = False):
         self.targets = " ".join(targets)
@@ -29,11 +30,10 @@ class PortScan:
 
         if self.ports == "0-65535":
             self.nmap_arguments += " -PE -PS{}".format(self.alive_port)
-            self.host_timeout += 60 * 10
-            self.max_retries = 0
+            self.host_timeout += 60 * 20
+            self.max_retries = 2
 
-
-        self.nmap_arguments += " --max-rtt-timeout 50ms  --initial-rtt-timeout 100ms"
+        self.nmap_arguments += " --max-rtt-timeout 320ms  --initial-rtt-timeout 100ms"
         self.nmap_arguments += " --min-rate 64"
         self.nmap_arguments += " --script-timeout 6s"
         self.nmap_arguments += " --host-timeout {}s".format(self.host_timeout)
@@ -61,7 +61,6 @@ class PortScan:
 
                     port_info_list.append(item)
 
-
             osmatch_list = nm[host].get("osmatch", [])
             os_info = self.os_match_by_accuracy(osmatch_list)
 
@@ -74,7 +73,6 @@ class PortScan:
 
         return ip_info_list
 
-
     def os_match_by_accuracy(self, os_match_list):
         for os_match in os_match_list:
             accuracy = os_match.get('accuracy', '0')
@@ -83,7 +81,8 @@ class PortScan:
 
         return {}
 
-def port_scan(targets, ports=Config.TOP_10, service_detect = False, os_detect = False):
+
+def port_scan(targets, ports=Config.TOP_10, service_detect=False, os_detect=False):
     targets = list(set(targets))
     targets = list(filter(utils.not_in_black_ips, targets))
     ps = PortScan(targets, ports, service_detect, os_detect)

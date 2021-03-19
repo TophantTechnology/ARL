@@ -57,6 +57,14 @@ class Config(object):
 
     DOMAIN_MAX_LEN = 30
 
+    DINGDING_SECRET = ""
+    DINGDING_ACCESS_TOKEN = ""
+
+    EMAIL_HOST = ""
+    EMAIL_PORT = ""
+    EMAIL_USERNAME = ""
+    EMAIL_PASSWORD = ""
+    EMAIL_TO = ""
 
 try:
     with open(os.path.join(basedir, 'config.yaml')) as f:
@@ -97,6 +105,29 @@ try:
             Config.DOMAIN_DICT_2W = domain_dict
         else:
             print("Warning {} is not file".format(domain_dict))
+
+    if y.get("DINGDING"):
+        if y["DINGDING"].get("SECRET"):
+            Config.DINGDING_SECRET = y["DINGDING"]["SECRET"]
+
+        if y["DINGDING"].get("ACCESS_TOKEN"):
+            Config.DINGDING_ACCESS_TOKEN = y["DINGDING"]["ACCESS_TOKEN"]
+
+    if y.get("EMAIL"):
+        if y["EMAIL"].get("HOST"):
+            Config.EMAIL_HOST = y["EMAIL"]["HOST"]
+
+        if y["EMAIL"].get("PORT"):
+            Config.EMAIL_PORT = int(y["EMAIL"]["PORT"])
+
+        if y["EMAIL"].get("USERNAME"):
+            Config.EMAIL_USERNAME = y["EMAIL"]["USERNAME"]
+
+        if y["EMAIL"].get("PASSWORD"):
+            Config.EMAIL_PASSWORD = y["EMAIL"]["PASSWORD"]
+
+        if y["EMAIL"].get("TO"):
+            Config.EMAIL_TO = y["EMAIL"]["TO"]
 
 except Exception as e:
     print("Parse config.yaml error {}".format(e))

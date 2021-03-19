@@ -1,5 +1,9 @@
 version: '3'
 
+volumes:
+  arl_db:
+    external: true
+
 services:
     web:
         image: tophant/arl:latest
@@ -7,13 +11,16 @@ services:
         restart: unless-stopped
         depends_on:
           - mongodb
+          - rabbitmq
         ports:
-          - "5003:80"
+          #http 服务，默认不映射出来
+          #- "5003:80"
+          - "5003:443"
         volumes:
           - ./arl_web.log:/code/arl_web.log
           - ./config-docker.yaml:/code/app/config.yaml
           - ./image:/code/app/tmp_screenshot
-        entrypoint: ["sh", "-c", "nginx; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
+        entrypoint: ["sh", "-c", "gen_crt.sh; nginx; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
         environment:
           - LANG=en_US.UTF-8
           - TZ=Asia/Shanghai
@@ -40,6 +47,7 @@ services:
       restart: unless-stopped
       depends_on:
         - mongodb
+        - rabbitmq
       volumes:
         - ./config-docker.yaml:/code/app/config.yaml
       entrypoint: [ "sh", "-c", "python3.6 -m app.scheduler" ]
@@ -52,7 +60,8 @@ services:
         container_name: arl_mongodb
         restart: always
         volumes:
-            - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+          - arl_db:/data/db
+          - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
         environment:
           - MONGO_INITDB_DATABASE=arl
           - MONGO_INITDB_ROOT_USERNAME=admin

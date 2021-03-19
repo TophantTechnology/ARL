@@ -22,7 +22,6 @@ task_data = {
         'site_capture': False,
         'file_leak': False,
         'alt_dns': False,
-        'url_spider': False,
         'ssl_cert': False,
         'fetch_api_path': False,
         'fofa_search': False,

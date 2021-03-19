@@ -4,7 +4,7 @@ from app.utils import conn_db as conn
 from .domain import DomainTask
 from app import utils
 from app.modules import TaskStatus, CollectSource
-from app.services import sync_asset
+from app.services import sync_asset, build_domain_info
 logger = utils.get_logger()
 import time
 from app.scheduler import update_job_run
@@ -25,7 +25,7 @@ def domain_executors(base_domain=None, job_id=None, scope_id=None, options=None,
 
 
 def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=None, name=""):
-    celery_id = ""
+    celery_id = "celery_id_placeholder"
 
     if current_task._get_current_object():
         celery_id = current_task.request.id
@@ -70,7 +70,7 @@ def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=
         update_job_run(job_id)
         new_domain = domain_executor.run()
         if new_domain:
-            sync_asset(task_id, scope_id, update_flag=True)
+            sync_asset(task_id, scope_id, update_flag=True, push_flag=True, task_name=name)
     except Exception as e:
         logger.exception(e)
         domain_executor.update_task_field("status", TaskStatus.ERROR)
@@ -88,6 +88,7 @@ class DomainExecutor(DomainTask):
         self.scope_domain_set = None
         self.new_domain_set = None
         self.task_tag = "monitor"
+        self.wildcard_ip_set = None
 
     def run(self):
         self.update_task_field("start_time", utils.curr_date())
@@ -99,6 +100,8 @@ class DomainExecutor(DomainTask):
 
         new_domain_set = self.domain_set - self.scope_domain_set
         self.new_domain_set = new_domain_set
+
+        self.set_wildcard_ip_set()
 
         self.set_domain_info_list()
 
@@ -135,6 +138,9 @@ class DomainExecutor(DomainTask):
         new = self.clear_domain_info_by_record(new)
         self.task_tag = "monitor"
 
+        if self.wildcard_ip_set:
+            new = self.clear_wildcard_domain_info(new)
+
         elapse = time.time() - t1
         logger.info("end build domain monitor task  {}, elapse {}".format(
             len(new), elapse))
@@ -145,5 +151,36 @@ class DomainExecutor(DomainTask):
         #重新保存新发现的域名
         self.save_domain_info_list(new, CollectSource.MONITOR)
         self.domain_info_list = new
+
+    def set_wildcard_ip_set(self):
+        cut_set = set()
+        random_name = utils.random_choices(6)
+        for domain in self.new_domain_set:
+            cut_name = utils.domain.cut_first_name(domain)
+            if cut_name:
+                cut_set.add("{}.{}".format(random_name, cut_name))
+
+        info_list = build_domain_info(cut_set)
+        wildcard_ip_set = set()
+        for info in info_list:
+            wildcard_ip_set |= set(info.ip_list)
+
+        self.wildcard_ip_set = wildcard_ip_set
+        logger.info("start get wildcard_ip_set {}".format(len(self.wildcard_ip_set)))
+
+    def clear_wildcard_domain_info(self, info_list):
+        cnt = 0
+        new = []
+        for info in info_list:
+            common_set = self.wildcard_ip_set & set(info.ip_list)
+            if common_set:
+                cnt += 1
+                continue
+            new.append(info)
+        logger.info("clear_wildcard_domain_info {}".format(cnt))
+        return new
+
+
+
 
 

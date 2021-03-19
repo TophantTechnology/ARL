@@ -36,6 +36,11 @@ api.add_namespace(routes.asset_domain_ns)
 api.add_namespace(routes.asset_ip_ns)
 api.add_namespace(routes.asset_site_ns)
 api.add_namespace(routes.scheduler_ns)
+api.add_namespace(routes.poc_ns)
+api.add_namespace(routes.vuln_ns)
+api.add_namespace(routes.batch_export_ns)
+api.add_namespace(routes.policy_ns)
+api.add_namespace(routes.npoc_service_ns)
 
 arl_update()
 

@@ -1,10 +1,11 @@
+import copy
 from app.utils import conn_db as conn
 from app import utils
 logger = utils.get_logger()
 
 
 class SyncAsset():
-    def __init__(self, task_id, scope_id, update_flag=False,  category=None):
+    def __init__(self, task_id, scope_id, update_flag=False,  category=None, task_name=""):
         self.available_category = ["site", "domain", "ip"]
 
         if category is None:
@@ -14,8 +15,22 @@ class SyncAsset():
 
         self.task_id = task_id
         self.scope_id = scope_id
-
+        self.task_name = task_name
         self.update_flag = update_flag
+
+        self.new_asset_map = {
+            "site": [],
+            "domain": [],
+            "ip": [],
+            "task_name": task_name
+        }
+
+        self.new_asset_counter = {
+            "site": 0,
+            "domain": 0,
+            "ip": 0
+        }
+        self.max_record_asset_count = 10
 
     def sync_by_category(self, category):
         dist_collection = 'asset_{}'.format(category)
@@ -30,6 +45,13 @@ class SyncAsset():
                 data["update_date"] = data["save_date"]
                 logger.info("sync {}, insert {}  {} -> {}".format(
                     category, data[category], self.task_id, self.scope_id))
+
+                #记录新插入的资产
+                if category in self.new_asset_map:
+                    if self.new_asset_counter[category] < self.max_record_asset_count:
+                        self.new_asset_map[category].append(copy.deepcopy(data))
+                    self.new_asset_counter[category] += 1
+
                 conn(dist_collection).insert_one(data)
 
             if old and self.update_flag:
@@ -56,7 +78,12 @@ class SyncAsset():
 
         logger.info("end sync {} -> {}".format(self.task_id, self.scope_id))
 
+        return self.new_asset_map, self.new_asset_counter
 
-def sync_asset(task_id, scope_id, update_flag=False,  category=None):
-    sync = SyncAsset(task_id=task_id, scope_id=scope_id, update_flag=update_flag, category=category)
-    sync.run()
+
+def sync_asset(task_id, scope_id, update_flag=False,  category=None, push_flag=False, task_name=""):
+    sync = SyncAsset(task_id=task_id, scope_id=scope_id,
+                     update_flag=update_flag, category=category, task_name=task_name)
+    new_asset_map, new_asset_counter = sync.run()
+    if push_flag:
+        utils.message_push(asset_map=new_asset_map, asset_counter=new_asset_counter)

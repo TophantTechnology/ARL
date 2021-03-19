@@ -25,6 +25,8 @@ base_search_fields = {
     "update_date__dlt": fields.String(description="更新时间小于")
 }
 
+site_search_fields = base_search_fields.copy()
+
 base_search_fields.update(base_query_fields)
 
 add_site_fields = ns.model('addAssetSite',  {
@@ -97,7 +99,6 @@ class ARLSiteExport(ARLResource):
         return response
 
 
-
 def add_site_to_scope(site, scope_id):
     fetch_site_data = services.fetch_site([site])
     web_analyze_data = services.web_analyze([site])
@@ -112,7 +113,6 @@ def add_site_to_scope(site, scope_id):
         item["update_date"] = curr_date
 
         utils.conn_db('asset_site').insert_one(item)
-
 
 
 delete_site_fields = ns.model('deleteAssetSite',  {
@@ -135,3 +135,38 @@ class DeleteARLAssetSite(ARLResource):
             utils.conn_db('asset_site').delete_one(query)
 
         return utils.build_ret(ErrorMsg.Success, {'_id': id_list})
+
+
+@ns.route('/save_result_set/')
+class ARLSaveResultSet(ARLResource):
+    parser = get_arl_parser(site_search_fields, location='args')
+
+    @auth
+    @ns.expect(parser)
+    def get(self):
+        """
+        保存资产站点到结果集
+        """
+        args = self.parser.parse_args()
+        query = self.build_db_query(args)
+        items = utils.conn_db('asset_site').distinct("site", query)
+
+        items = list(set([utils.url.cut_filename(x) for x in items]))
+
+        if len(items) == 0:
+            return utils.build_ret(ErrorMsg.QueryResultIsEmpty, {})
+
+        data = {
+            "items": items,
+            "type": "asset_site",
+            "total": len(items)
+        }
+        result = utils.conn_db('result_set').insert_one(data)
+
+        ret_data = {
+            "result_set_id": str(result.inserted_id),
+            "result_total": len(items),
+            "type": "asset_site"
+        }
+
+        return utils.build_ret(ErrorMsg.Success, ret_data)

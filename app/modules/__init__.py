@@ -34,6 +34,19 @@ class TaskStatus:
     STOP = "stop"
 
 
+class TaskTag:
+    """任务标签"""
+
+    """带资产发现的任务"""
+    TASK = "task"
+
+    """域名监控任务"""
+    MONITOR = "monitor"
+
+    """风险巡航任务"""
+    RISK_CRUISING = "risk_cruising"
+
+
 class TaskSyncStatus:
     WAITING = "waiting"
     RUNNING = "running"
@@ -44,6 +57,14 @@ class TaskSyncStatus:
 class SchedulerStatus:
     RUNNING = "running"
     STOP = "stop"
+
+
+class PoCCategory:
+    POC = "漏洞PoC"
+    SNIFFER = "协议识别"
+    SYSTEM_BRUTE = "服务弱口令"
+    WEBB_RUTE = "应用弱口令"
+
 
 class CeleryAction:
     """celery任务celery_action字段"""
@@ -62,6 +83,9 @@ class CeleryAction:
 
     """添加任务到资产组中"""
     ADD_DOMAIN_TO_SCOPE = "add_domain_to_scope"
+
+    """PoC运行任务"""
+    RUN_RISK_CRUISING = "run_risk_cruising"
 
 error_map = {
     'CeleryIdNotFound': {
@@ -132,6 +156,10 @@ error_map = {
         "message": "目标IP不允许下发",
         "code": 705,
     },
+    "TaskTargetIsEmpty": {
+        "message": "任务目标为空",
+        "code": 706,
+    },
     "TaskSyncDealing": {
         "message": "任务资产同步处理中",
         "code": 801,
@@ -171,6 +199,38 @@ error_map = {
     "SchedulerStatusNotStop": {
         "message": "监控任务非停止状态",
         "code": 902,
+    },
+    "ResultSetIDNotFound": {
+        "message": "结果集 ID 没有找到",
+        "code": 1001,
+    },
+    "ResultSetIsEmpty": {
+        "message": "结果集中目标为空",
+        "code": 1002,
+    },
+    "PoCTargetIsEmpty": {
+        "message": "PoC 任务目标为空",
+        "code": 1003,
+    },
+    "QueryResultIsEmpty": {
+        "message": "查询结果为空",
+        "code": 1004,
+    },
+    "PolicyIDNotFound": {
+        "message": "策略不存在",
+        "code": 1100,
+    },
+    "RiskCruisingPoCConfigIsEmpty": {
+        "message": "风险巡航任务选择的策略PoC配置字段不能为空",
+        "code": 1101,
+    },
+    "BruteTaskBruteConfigIsEmpty": {
+        "message": "弱口令任务选择的策略爆破配置字段不能为空",
+        "code": 1102,
+    },
+    "PolicyDataIsEmpty": {
+        "message": "策略数据为空",
+        "code": 1103,
     }
 }
 
@@ -203,6 +263,15 @@ class ErrorMsg:
     SchedulerStatusNotRunning = error_map["SchedulerStatusNotRunning"]
     SchedulerStatusNotStop = error_map["SchedulerStatusNotStop"]
     DomainNotFoundNotInScope = error_map["DomainNotFoundNotInScope"]
+    ResultSetIDNotFound = error_map["ResultSetIDNotFound"]
+    ResultSetIsEmpty = error_map["ResultSetIsEmpty"]
+    PoCTargetIsEmpty = error_map["PoCTargetIsEmpty"]
+    QueryResultIsEmpty = error_map["QueryResultIsEmpty"]
+    TaskTargetIsEmpty = error_map["TaskTargetIsEmpty"]
+    PolicyIDNotFound = error_map["PolicyIDNotFound"]
+    PolicyDataIsEmpty = error_map["PolicyDataIsEmpty"]
+    RiskCruisingPoCConfigIsEmpty = error_map["RiskCruisingPoCConfigIsEmpty"]
+    BruteTaskBruteConfigIsEmpty = error_map["BruteTaskBruteConfigIsEmpty"]
 
 
 
