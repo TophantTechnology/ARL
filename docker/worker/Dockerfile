@@ -16,6 +16,8 @@ RUN yum install nginx -y
 
 COPY app/ app/
 
+COPY test/ test/
+
 RUN ln -s /code/app/tools/phantomjs  /usr/bin/phantomjs
 
 COPY docker/frontend/ frontend/

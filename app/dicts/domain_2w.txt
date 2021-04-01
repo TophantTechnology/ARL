@@ -319,6 +319,7 @@ account3
 accounting
 accounts
 accumulate
+accumulo
 accuracy
 accurate
 accuse
@@ -354,6 +355,7 @@ action
 activate
 activation
 active
+activemq
 activesync
 activities
 activity
@@ -542,9 +544,11 @@ aim
 aims
 aion
 air
+airavata
 airchina
 aircraft
 aire
+airflow
 airline
 airplane
 airport
@@ -646,6 +650,7 @@ allow
 alloy
 allstar
 allstars
+allura
 allwww
 ally
 alma
@@ -702,6 +707,7 @@ amazing
 amazon
 amazone
 amb
+ambari
 amber
 ambition
 ambulance
@@ -850,6 +856,7 @@ anunturi
 anxiety
 anxious
 any
+any23
 anyang
 anybody
 anycast
@@ -923,6 +930,7 @@ apidev
 apigateway
 apim
 apis
+apisix
 apistore
 apitest
 apiv2
@@ -1041,6 +1049,7 @@ archangel
 archer
 architecture
 archiv
+archiva
 archive
 archives
 archivio
@@ -1208,6 +1217,7 @@ asterisk
 asterisk1
 asterisk2
 asterix
+asterixdb
 astonish
 astra
 astrahan
@@ -1261,6 +1271,7 @@ attend
 attendance
 attention
 attentive
+attic
 attitude
 attract
 attraction
@@ -1345,6 +1356,7 @@ avm
 avoid
 avon
 avril
+avro
 avs
 avto
 avxcl
@@ -1481,6 +1493,7 @@ bae
 bag
 baggage
 baghdad
+bahir
 bai
 baicheng
 baichuan
@@ -1812,6 +1825,7 @@ bigdata
 bigdog
 bigmac
 bigtits
+bigtop
 bijie
 bike
 bikini
@@ -1956,6 +1970,7 @@ blogtest
 blogx.dev
 blondie
 blood
+bloodhound
 bloom
 blossom
 blow
@@ -2026,6 +2041,7 @@ boo
 book
 booking
 bookings
+bookkeeper
 bookman
 bookmark
 books
@@ -2144,6 +2160,7 @@ bronx
 bronze
 brood
 brook
+brooklyn
 broom
 brother
 brothers
@@ -2204,6 +2221,7 @@ build.www
 builder
 builder.cp
 building
+buildr
 bulb
 bulgaria
 bulk
@@ -2244,6 +2262,7 @@ buy
 buy.m
 buzz
 bv
+bval
 bw
 bwb
 bwc
@@ -2333,6 +2352,7 @@ cake
 cakes
 cal
 calc
+calcite
 calcium
 calculate
 calculation
@@ -2430,6 +2450,7 @@ caracas
 caramel
 caravan
 carbon
+carbondata
 card
 cardata
 cardinal
@@ -2482,6 +2503,7 @@ cashing
 cashtest
 casino
 casper
+cassandra
 cassette
 cassini
 cassiopeia
@@ -2506,6 +2528,7 @@ cats
 cattle
 cause
 cave
+cayenne
 cb
 cba
 cba.sports
@@ -2600,6 +2623,7 @@ celebrate
 celebrity
 celeste
 celine
+celix
 cell
 cellar
 celular
@@ -2938,6 +2962,7 @@ clear
 clearly
 clearsports
 cleo
+clerezza
 clerk
 cleveland
 clever
@@ -2987,6 +3012,7 @@ cloudapp
 cloudax
 cloudfront
 cloudprint
+cloudstack
 cloudy
 clover
 clp
@@ -3141,6 +3167,7 @@ common-sw
 common-sw1
 common-sw2
 commonly
+commons
 communicate
 communication
 communications
@@ -3172,6 +3199,7 @@ complex
 complicate
 complicated
 component
+components
 compose
 composite
 composition
@@ -3334,6 +3362,7 @@ cor
 coral
 cord
 cordial
+cordova
 core
 core1
 core2
@@ -3373,6 +3402,7 @@ costarica
 costly
 cottage
 cotton
+couchdb
 cougar
 cough
 could
@@ -3455,6 +3485,7 @@ crawler
 crayon
 crazy
 crc
+creadur
 cream
 create
 creater
@@ -3571,6 +3602,7 @@ cstest
 cstrike
 csweb
 ct
+ctakes
 ctc
 ctec
 ctf
@@ -3605,6 +3637,7 @@ cup
 cupboard
 cupcake
 cupid
+curator
 cure
 curiosity
 curious
@@ -3656,6 +3689,7 @@ cwsf
 cwsp
 cx
 cxcy
+cxf
 cxjs
 cxw
 cxzy
@@ -3718,6 +3752,7 @@ daedalus
 daemon
 daesin
 dafeng
+daffodil
 daffy
 dag
 dagl
@@ -3801,7 +3836,9 @@ database1
 database2
 databases
 datacenter
+datafu
 dataorigin
+datasketches
 datasync
 datav
 date
@@ -3947,6 +3984,7 @@ delivery.b
 dell
 delphi
 delta
+deltaspike
 dem
 demand
 demeter
@@ -4374,6 +4412,7 @@ dollars
 dolls
 dolly
 dolphin
+dolphinscheduler
 dom
 domain
 domain2
@@ -4496,6 +4535,7 @@ drought
 drown
 drp
 drug
+druid
 drum
 drunk
 drupal
@@ -4526,6 +4566,7 @@ dts
 du
 dual
 dubai
+dubbo
 duck
 dude
 dudu
@@ -4662,6 +4703,7 @@ ecc
 ecdl
 ece
 ecenter
+echarts
 echelon
 echidna
 echo
@@ -4904,6 +4946,7 @@ emperor
 emphasis
 emphasize
 empire
+empire-db
 empleo
 emploi
 employ
@@ -5464,6 +5507,7 @@ feedme
 feeds
 feel
 feeling
+feign
 felix
 fellow
 female
@@ -5559,11 +5603,13 @@ financing
 finanse
 finch
 find
+findbug
 findcodecs
 finder
 finding
 findphone
 fine
+fineract
 finger
 finish
 finland
@@ -5626,6 +5672,7 @@ flexible
 flickr
 flight
 flights
+flink
 flint
 flirt
 flo
@@ -5652,6 +5699,8 @@ flu
 fluent
 fluffy
 fluid
+flume
+fluo
 flush
 flux
 flv
@@ -5797,6 +5846,7 @@ freeland
 freely
 freemail
 freeman
+freemarker
 freeprodm
 freesoft
 freestyle
@@ -6131,6 +6181,7 @@ gently
 genuine
 geo
 geo.redis.cache
+geode
 geography
 geoip
 geology
@@ -6194,6 +6245,7 @@ gio
 giovanni
 gip
 giporigin
+giraph
 girl
 girls
 gis
@@ -6259,6 +6311,7 @@ go2
 go4it
 goal
 goat
+gobblin
 goblin
 gobo
 god
@@ -6299,6 +6352,7 @@ google1
 gooogle
 goose
 gopher
+gora
 goran
 gordon
 gore
@@ -6354,6 +6408,7 @@ graph
 grapher
 graphics
 graphite
+graphql
 graphs
 grasp
 grass
@@ -6386,6 +6441,7 @@ gregory
 grey
 grid
 grieve
+griffin
 grind
 grip
 groan
@@ -6404,6 +6460,7 @@ groupware
 groupwise
 grow
 growth
+grpc
 grs
 grs-whois
 gry
@@ -6436,6 +6493,7 @@ gtr
 gtr-dev
 gts
 gu
+guacamole
 guahao
 guangan
 guangyuan
@@ -6469,6 +6527,7 @@ guiyang
 guizhou
 gulf
 gum
+gump
 gun
 gundam
 gunpowder
@@ -6555,6 +6614,7 @@ hacker
 hackers
 hades
 hadi
+hadoop
 hadron
 haerbin
 hagrid
@@ -6683,12 +6743,14 @@ haven
 havoc
 hawaii
 hawk
+hawq
 hawthorn
 hay
 hayato
 hayden
 hazard
 hb
+hbase
 hbf
 hc
 hcc
@@ -7074,6 +7136,7 @@ hts
 http
 http1
 http2
+httpcomponents
 httpdns
 https
 hu
@@ -7091,6 +7154,7 @@ hub
 hubble
 hubei
 hud
+hudi
 hudong
 hudson
 hue
@@ -7147,6 +7211,7 @@ hydrogen
 hyouon32
 hyper
 hyperion
+hystrix
 hyundai
 hyxy
 hz
@@ -7432,6 +7497,7 @@ imooc
 imos
 imp
 impact
+impala
 impatient
 imperia
 imperial
@@ -7673,6 +7739,7 @@ ion
 ios
 iot
 iota
+iotdb
 iowa
 ip
 ip-ca
@@ -7861,6 +7928,7 @@ jack
 jackass
 jacket
 jackpot
+jackrabbit
 jackson
 jacob
 jade
@@ -7909,9 +7977,11 @@ jc
 jcb
 jcc
 jck
+jclouds
 jcm
 jcxy
 jd
+jdbc
 jdc
 jdgcxy
 jdt
@@ -7927,6 +7997,7 @@ jefferson
 jelly
 jellyfish
 jen
+jena
 jenkins
 jennifer
 jenny
@@ -7943,6 +8014,7 @@ jessie
 jester
 jesus
 jet
+jetty
 jeu
 jeux
 jewel
@@ -8042,6 +8114,7 @@ jk
 jky
 jl
 jm
+jmeter
 jms
 jmx
 jmxy
@@ -8059,6 +8132,7 @@ joel
 joey
 john
 johnny
+johnzon
 join
 join2
 joint
@@ -8110,6 +8184,7 @@ jsjxy
 jslverify
 json
 jsp
+jspwiki
 jss
 jsyd
 jt
@@ -8118,6 +8193,7 @@ ju
 juan
 jubao
 judas
+juddi
 judge
 judgement
 judith
@@ -8141,6 +8217,7 @@ jumopartners
 jump
 jun
 june
+juneau
 jungle
 junior
 juniper
@@ -8254,6 +8331,7 @@ kaoshi
 kapital
 kappa
 kar
+karaf
 karaoke
 karate
 karen
@@ -8353,6 +8431,7 @@ khorshid
 ki
 kia
 kibana
+kibble
 kick
 kid
 kids
@@ -8493,6 +8572,7 @@ kuai
 kuaibao
 kuba
 kuban
+kudu
 kuerle
 kuku
 kultur
@@ -8523,6 +8603,7 @@ kyc
 kygl
 kyle
 kylie
+kylin
 kyokushin
 kyoto
 kyxt
@@ -8761,6 +8842,7 @@ lib
 lib1
 lib2
 libanswers
+libcloud
 liberal
 liberate
 liberation
@@ -8956,7 +9038,10 @@ locomotive
 lodge
 log
 log1
+log4j
+log4j2
 logan
+logback
 logbook
 logger
 logging
@@ -9063,6 +9148,8 @@ lua
 luban
 lucas
 lucca
+lucene
+lucene.net
 lucia
 lucifer
 lucius
@@ -9213,6 +9300,7 @@ madam
 made.by
 madi
 madison
+madlib
 madmax
 madonna
 madrid
@@ -9246,6 +9334,7 @@ mahachkala
 mahara
 mahdi
 maher
+mahout
 mai
 maia
 maid
@@ -9480,6 +9569,7 @@ mango
 manhattan
 mani
 mania
+manifoldcf
 mankind
 manly
 manner
@@ -9770,6 +9860,7 @@ members1
 members2
 members3
 membership
+memcached
 meme
 memo
 memoria
@@ -9810,6 +9901,7 @@ merpati
 merry
 mes
 mesh
+mesos
 mess
 message
 messagerie
@@ -9821,6 +9913,7 @@ meta
 metal
 metalib.lib
 metallica
+metamodel
 metc
 meteo
 meteor
@@ -10049,6 +10142,7 @@ mms2
 mmstat
 mn
 mncg
+mnemonic
 mnemosyne
 mnews
 mng
@@ -10201,6 +10295,7 @@ most
 mostly
 mot
 mota
+motan
 mother
 motion
 motivate
@@ -10487,6 +10582,7 @@ mydesktop
 mydev
 mydiskm
 mydomain
+myfaces
 myfiles
 myforum
 myftp
@@ -10506,6 +10602,7 @@ mymoney
 mymusic
 myname
 mynet
+mynewt
 myoa
 myoffice
 myown
@@ -10771,6 +10868,7 @@ net1
 net2
 netbackup
 netbar
+netbeans
 netflow
 netlab
 netman
@@ -10893,6 +10991,7 @@ nicolas
 nicole
 nida
 niece
+nifi
 nigeria
 night
 nightlife
@@ -11005,6 +11104,7 @@ norway
 nos
 nose
 nospam
+nosql
 nostromo
 not
 nota
@@ -11248,6 +11348,7 @@ nurse
 nursery
 nursing
 nut
+nutch
 nutri
 nutrition
 nuts
@@ -11387,6 +11488,7 @@ oe
 oec
 oem
 of
+ofbiz
 ofertas
 off
 offcampus
@@ -11442,6 +11544,7 @@ ole
 oleg
 olga
 olimp
+olingo
 olive
 oliver
 olivia
@@ -11503,9 +11606,11 @@ ontario
 ontime
 onto
 onyx
+oodt
 ooo
 oops
 oos
+oozie
 op
 opa
 opac
@@ -11528,10 +11633,16 @@ openerp
 openfire
 openid
 opening
+openjpa
+openmeetings
+opennlp
+openoffice
 openresearch
 opensource
 opentest
 openvz
+openwebbeans
+openwhisk
 openx
 oper
 opera
@@ -11837,6 +11948,7 @@ parker
 parking
 parkour
 parliament
+parquet
 parrot
 parser
 part
@@ -11942,6 +12054,7 @@ pdb
 pdb2
 pdc
 pdf
+pdfbox
 pdfs
 pdi
 pdm
@@ -12036,6 +12149,7 @@ pet
 pete
 peter
 petra
+petri
 petrol
 petroleum
 pets
@@ -12170,6 +12284,7 @@ pingxiang
 pink
 pinky
 pinnacle
+pinpoint
 pint
 pioneer
 pip
@@ -12239,6 +12354,7 @@ players
 playgame
 playground
 plaza
+plc4x
 pld
 pleasant
 please
@@ -12884,6 +13000,7 @@ qms
 qn
 qncdn
 qp
+qpid
 qq
 qqhr
 qqmail
@@ -12918,6 +13035,7 @@ quartz
 quasar
 quatro
 quattro
+qube
 qudao
 quebec
 queen
@@ -13002,6 +13120,7 @@ r7
 ra
 rabais
 rabbit
+rabbitmq
 rabota
 rac
 rac2
@@ -13105,6 +13224,7 @@ rather
 rating
 ratio
 rational
+ratis
 raven
 ravi
 raw
@@ -13399,6 +13519,7 @@ resign
 resignation
 resim
 resimler
+resin
 resist
 resistance
 resistant
@@ -13568,6 +13689,7 @@ rochester
 rock
 rocker
 rocket
+rocketmq
 rockon
 rocks
 rocky
@@ -13642,6 +13764,7 @@ row
 roxy
 roy
 royal
+royale
 roza
 rp
 rpc
@@ -13731,6 +13854,7 @@ rw
 rwb
 rwhois
 rwxy
+rya
 ryan
 ryazan
 ryder
@@ -13839,6 +13963,7 @@ samson
 samsung
 samuel
 samurai
+samza
 san
 sana
 sanantonio
@@ -13866,6 +13991,7 @@ santander
 sante
 santiago
 santosh
+santuario
 sanya
 sao
 sap
@@ -14137,6 +14263,7 @@ seraph
 serena
 serene
 serenity
+serf
 serg
 sergey
 sergio
@@ -14170,7 +14297,9 @@ service2
 service3
 service4
 serviceapp
+servicecomb
 servicemail
+servicemix
 servicenet
 services
 services2
@@ -14269,6 +14398,8 @@ shaoxing
 shaoyang
 shape
 shara
+sharding
+shardingsphere
 share
 shared
 sharefile
@@ -14319,6 +14450,7 @@ shino
 ship
 shipping
 shire
+shiro
 shirt
 shishi
 shiva
@@ -14458,6 +14590,7 @@ since
 sincere
 sinfo
 sing
+singa
 singapore
 singer
 singh
@@ -14550,6 +14683,7 @@ skyline
 skynet
 skype
 skywalker
+skywalking
 sl
 sl1
 sla
@@ -14571,6 +14705,7 @@ slides
 slight
 slightly
 slim
+sling
 slip
 slipknot
 slipper
@@ -14781,6 +14916,7 @@ somewhere
 son
 sona
 sonar
+sonarqube
 sonarr
 sonata
 sondage
@@ -14846,6 +14982,7 @@ spain
 spam
 spam1
 spam2
+spamassassin
 spambox
 spamd
 spamfilter
@@ -14940,6 +15077,7 @@ spravka
 spray
 spread
 spring
+springboot
 springtime
 sprinkle
 sprint
@@ -14965,6 +15103,7 @@ sql5
 sqladmin
 sqlserver
 sqltest-eg1
+sqoop
 sqqvod
 square
 squeeze
@@ -15376,6 +15515,7 @@ superman
 supermarket
 supernova
 superprodm
+superset
 supersite
 supersonic
 superstar
@@ -15515,6 +15655,7 @@ synapse
 sync
 sync1
 sync2
+syncope
 synd
 synergy
 synthetic
@@ -15530,6 +15671,7 @@ sysmon
 syss
 system
 systematic
+systemds
 systems
 syy
 syzx
@@ -15613,6 +15755,7 @@ taobao
 taos
 tap
 tape
+tapestry
 tapety
 tapi
 tar
@@ -15871,6 +16014,7 @@ texas
 text
 textbook
 textile
+tez
 tf
 tf1
 tf2
@@ -15965,6 +16109,7 @@ threads
 threat
 threaten
 three
+thrift
 thrill
 thrive
 throat
@@ -16013,6 +16158,7 @@ tiger
 tigers
 tigger
 tight
+tika
 tiki
 tiku
 till
@@ -16038,6 +16184,7 @@ tina
 ting
 tinker
 tinkerbell
+tinkerpop
 tino
 tintin
 tintuc
@@ -16115,6 +16262,9 @@ tomate
 tomato
 tomb
 tomcat
+tomcat6
+tomcat7
+tomee
 tomita
 tommy
 tomo
@@ -16233,7 +16383,10 @@ traefik
 traf
 traffic
 traffic2
+trafficcontrol
+trafficserver
 trafic
+trafodion
 tragedy
 trail
 trailer
@@ -16422,6 +16575,7 @@ tv1
 tv2
 tva
 tver
+tvm
 tvonline
 tvr
 tvui
@@ -16506,6 +16660,7 @@ ui
 uia
 uic
 uid
+uima
 uimg
 uis
 uj5wyc0l7x-2
@@ -16597,6 +16752,7 @@ unlock
 unlucky
 unnecessary
 uno
+unomi
 unpleasant
 unplugged
 unreal
@@ -16687,6 +16843,7 @@ user.api.3g
 user1
 user2
 usercenter
+usergrid
 username
 users
 usertest
@@ -16799,6 +16956,7 @@ vcampus
 vcd
 vce
 vcenter
+vcl
 vcm
 vcode
 vcon
@@ -17514,6 +17672,7 @@ which
 whichever
 while
 whilst
+whimsy
 whip
 whirl
 whisky
@@ -17539,6 +17698,7 @@ why
 whynot
 wi
 wicked
+wicket
 wide
 widely
 widen
@@ -18837,6 +18997,7 @@ x22
 x3
 x4
 xa
+xalan
 xam
 xanadu
 xapp
@@ -18860,6 +19021,7 @@ xena
 xenapp
 xenon
 xeon
+xerces
 xerox
 xerxes
 xf
@@ -19070,6 +19232,7 @@ yeni
 yes
 yesterday
 yet
+yetus
 yf
 yfzx
 yg
@@ -19328,6 +19491,7 @@ zing
 zion
 zip
 zipcode
+zipkin
 zippy
 zixun
 zixvpm
@@ -19359,6 +19523,7 @@ zona
 zone
 zongyi
 zoo
+zookeeper
 zoom
 zoot
 zorro
