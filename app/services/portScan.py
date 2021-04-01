@@ -37,7 +37,7 @@ class PortScan:
         self.nmap_arguments += " --min-rate 64"
         self.nmap_arguments += " --script-timeout 6s"
         self.nmap_arguments += " --host-timeout {}s".format(self.host_timeout)
-        self.nmap_arguments += " --min-hostgroup 64 --min-parallelism 64"
+        self.nmap_arguments += " --min-parallelism 32"
         self.nmap_arguments += " --max-retries {}".format(self.max_retries)
 
     def run(self):
