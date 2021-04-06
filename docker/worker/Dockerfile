@@ -52,3 +52,6 @@ RUN pip3.6 install -r requirements.txt
 ## 安装 NPoC 的依赖
 WORKDIR /opt/ARL-NPoC/
 RUN pip3.6 install -r requirements.txt
+
+## 切换工作目录
+WORKDIR /code
