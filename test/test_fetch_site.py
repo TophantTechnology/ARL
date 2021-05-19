@@ -8,7 +8,12 @@ class TestDomain(unittest.TestCase):
         data = services.fetch_site(sites, concurrency=2)
         self.assertTrue(len(data) >= 1)
         self.assertTrue(len(data[0]["favicon"]["data"]) >= 10)
-        self.assertTrue(data[0]["favicon"]["hash"] == -1507567067)
+        self.assertTrue(data[0]["favicon"]["hash"] == -1588080585)
+
+    def test_leye_taobao(self):
+        sites = ["https://leye.taobao.com"]
+        data = services.fetch_site(sites, concurrency=2)
+        self.assertTrue(len(data) == 2)
 
 
 if __name__ == '__main__':

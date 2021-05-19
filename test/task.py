@@ -25,7 +25,8 @@ task_data = {
         'site_spider': False,
         'search_engines': False,
         'ssl_cert': False,
-        'fofa_search': False
+        'fofa_search': False,
+        'crtsh_search': False
     }
 }
 

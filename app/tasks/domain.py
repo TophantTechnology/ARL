@@ -467,6 +467,9 @@ class DomainTask():
         #用来区分是正常任务还是监控任务
         self.task_tag = "task"
 
+        #用来存放泛解析域名映射的IP
+        self._not_found_domain_ips = None
+
         self.npoc_service_target_set = set()
 
         scan_port_map = {
@@ -482,6 +485,17 @@ class DomainTask():
             "os_detect": self.options.get("os_detection", False)
         }
         self.scan_port_option = scan_port_option
+
+    @property
+    def not_found_domain_ips(self):
+        if self._not_found_domain_ips is None:
+            fake_domain = "at"+utils.random_choices(4) + "." + self.base_domain
+            self._not_found_domain_ips = utils.get_ip(fake_domain)
+
+            if self._not_found_domain_ips:
+                logger.info("not_found_domain_ips  {} {}".format(fake_domain, self._not_found_domain_ips))
+
+        return self._not_found_domain_ips
 
     def save_domain_info_list(self, domain_info_list, source = CollectSource.DOMAIN_BRUTE):
         for domain_info_obj in domain_info_list:
@@ -515,6 +529,13 @@ class DomainTask():
                 continue
 
             record = info.record_list[0]
+
+            ip = info.ip_list[0]
+
+            # 解决泛解析域名问题，果断剔除
+            if ip in self.not_found_domain_ips:
+                continue
+
             cnt = self.record_map.get(record, 0)
             cnt += 1
             self.record_map[record] = cnt
@@ -552,6 +573,20 @@ class DomainTask():
         self.domain_info_list.extend(domain_info_list)
         elapse = time.time() - arl_t1
         logger.info("end arl fetch {} {} elapse {}".format(
+            self.base_domain, len(domain_info_list), elapse))
+
+    def crtsh_search(self):
+        t1 = time.time()
+        logger.info("start crtsh search {}".format(self.base_domain))
+        crtsh_domains = services.crtsh_search(self.base_domain)
+        domain_info_list = self.build_domain_info(crtsh_domains)
+        if self.task_tag == "task":
+            domain_info_list = self.clear_domain_info_by_record(domain_info_list)
+            self.save_domain_info_list(domain_info_list, source=CollectSource.CRTSH)
+
+        self.domain_info_list.extend(domain_info_list)
+        elapse = time.time() - t1
+        logger.info("end crtsh search {} {} elapse {}".format(
             self.base_domain, len(domain_info_list), elapse))
 
     def build_domain_info(self, domains):
@@ -900,13 +935,21 @@ class DomainTask():
                 self.domain_info_list.append(domain_info)
                 self.save_domain_info_list([domain_info])
 
-        '''***RiskIQ查询****'''
+        # ***RiskIQ查询****
         if self.options.get("riskiq_search") and services.riskiq_quota() > 0:
             self.update_task_field("status", "riskiq_search")
             t1 = time.time()
             self.riskiq_search()
             elapse = time.time() - t1
             self.update_services("riskiq_search", elapse)
+
+        # crt.sh 网站查询
+        if self.options.get("crtsh_search"):
+            self.update_task_field("status", "crtsh_search")
+            t1 = time.time()
+            self.crtsh_search()
+            elapse = time.time() - t1
+            self.update_services("crtsh_search", elapse)
 
         if self.options.get("arl_search"):
             self.update_task_field("status", "arl_search")
@@ -1084,6 +1127,7 @@ class DomainTask():
             item["save_date"] = utils.curr_date()
             utils.conn_db('vuln').insert_one(item)
 
+
     def run(self):
 
         self.update_task_field("start_time", utils.curr_date())
@@ -1133,7 +1177,8 @@ def add_domain_to_scope(domain, scope_id):
             'site_spider': False,
             'search_engines': False,
             'ssl_cert': False,
-            'fofa_search': False
+            'fofa_search': False,
+            'crtsh_search': True
         }
     }
 

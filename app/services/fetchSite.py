@@ -1,7 +1,7 @@
 import time
 from pyquery import PyQuery as pq
 import binascii
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from urllib3.util.url import get_host
 import mmh3
 from app import utils
@@ -44,6 +44,10 @@ class FetchSite(BaseThread):
         if conn.status_code == 301 or conn.status_code == 302:
             url_302 = urljoin(site, conn.headers.get("Location", ""))
             if url_302 != site and url_302.startswith(site):
+                site_path = urlparse(site).path.strip("/")
+                url_302_path = urlparse(url_302).path
+                if len(site_path) > 5 and url_302_path.endswith(site_path):
+                    return
                 self.work(url_302)
 
     def run(self):

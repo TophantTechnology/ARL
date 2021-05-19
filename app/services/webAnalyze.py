@@ -19,7 +19,7 @@ class WebAnalyze(BaseThread):
                           Config.DRIVER_JS ,
                           site
                           ]
-        logger.info("WebAnalyze=> {}".format(" ".join(cmd_parameters)))
+        logger.debug("WebAnalyze=> {}".format(" ".join(cmd_parameters)))
 
         output = utils.check_output(cmd_parameters, timeout=20)
         output = output.decode('utf-8')

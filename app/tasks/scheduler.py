@@ -55,6 +55,7 @@ def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=
             'search_engines': False,
             'ssl_cert': False,
             'fofa_search': False,
+            'crtsh_search': True,
             'scope_id': scope_id
         },
         'celery_id': celery_id

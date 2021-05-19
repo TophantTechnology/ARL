@@ -7,6 +7,7 @@ from bson import ObjectId
 import re
 from collections import Counter
 from openpyxl.writer.excel import save_virtual_workbook
+from openpyxl.styles import Font, Color
 from app.utils import get_logger, auth
 from app import utils
 from urllib.parse import quote
@@ -149,21 +150,33 @@ class SaveTask(object):
         self.wb = Workbook()
         self.is_ip_task = False
 
+    def set_style(self, ws):
+        font = Font(name="Consolas", color="111111")
+        column = "ABCDEFGHIJKLMNO"
+        for x in column:
+            for y in range(1, 256):
+                ws["{}{}".format(x,y)].font = font
+
     def build_service_xl(self):
         ws = self.wb.create_sheet(title="系统服务")
         ws.column_dimensions['A'].width = 22.0
-        ws.column_dimensions['B'].width = 20.0
-        ws.column_dimensions['C'].width = 40.0
-        column_tilte = ["IP端口", "服务", "产品", "版本"]
+        ws.column_dimensions['B'].width = 10.0
+        ws.column_dimensions['C'].width = 20.0
+        ws.column_dimensions['D'].width = 40.0
+
+        column_tilte = ["IP", "端口","服务", "产品", "版本"]
         ws.append(column_tilte)
         for item in get_ip_data(self.task_id):
             for port_info in item["port_info"]:
                 row = []
-                row.append("{}:{}".format(item["ip"], port_info["port_id"]))
+                row.append(item["ip"])
+                row.append("{}".format(port_info["port_id"]))
                 row.append(port_info["service_name"])
                 row.append(port_info.get("product", ""))
                 row.append(port_info.get("version", ""))
                 ws.append(row)
+
+        self.set_style(ws)
 
     def build_ip_xl(self):
         ws = self.wb.create_sheet(title="IP")
@@ -227,6 +240,8 @@ class SaveTask(object):
                 row.append(osname)
                 ws.append(row)
 
+        self.set_style(ws)
+
     def ignore_illegal(self, content):
         ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
         content = ILLEGAL_CHARACTERS_RE.sub(r'', content)
@@ -251,6 +266,8 @@ class SaveTask(object):
             row.append(item["favicon"].get("hash", ""))
             ws.append(row)
 
+        self.set_style(ws)
+
     def build_domain_xl(self):
         ws = self.wb.create_sheet(title="域名")
         ws.column_dimensions['A'].width = 30.0
@@ -268,6 +285,8 @@ class SaveTask(object):
             row.append(" \r\n".join(item["record"]))
             row.append(" \r\n".join(item["ips"]))
             ws.append(row)
+
+        self.set_style(ws)
 
     def build_statist(self):
         statist = port_service_product_statist(self.task_id)
@@ -334,6 +353,7 @@ class SaveTask(object):
             ws["K27"] = "产品类别总数"
             ws["K28"] = product_total
 
+        self.set_style(ws)
 
     def run(self):
         task_data = get_task_data(self.task_id)
@@ -356,7 +376,8 @@ class SaveTask(object):
 
         return save_virtual_workbook(self.wb)
 
+
 def export_arl(task_id):
     task_id = task_id.strip()
     save = SaveTask(task_id)
-    return  save.run()
+    return save.run()

@@ -83,6 +83,7 @@ region
 reset
 s3
 sandbox
+scan
 scm
 search
 secure

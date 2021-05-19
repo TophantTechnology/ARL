@@ -7,13 +7,11 @@ ns = Namespace('vuln', description="漏洞信息")
 logger = get_logger()
 
 base_search_fields = {
-    'fld': fields.String(required=False, description="IP"),
-    'site': fields.String(description="域名"),
-    'url': fields.String(required=False, description="URL"),
-    'content_length': fields.Integer(description="body 长度"),
-    'status_code': fields.Integer(description="状态码"),
-    'title': fields.String(description="标题"),
-    'source': fields.String(description="来源"),
+    'plg_name': fields.String(required=False, description="plugin ID"),
+    'plg_type': fields.String(description="类别"),
+    'vul_name': fields.String(description="漏洞名称"),
+    'app_name': fields.String(description="应用名"),
+    'target': fields.String(description="目标"),
     "task_id": fields.String(description="任务ID")
 }
 

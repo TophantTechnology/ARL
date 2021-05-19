@@ -42,7 +42,7 @@ class BaseThread(object):
                 target = target.strip()
 
             cnt += 1
-            logger.info("[{}/{}] work on {}".format(cnt, len(self.targets), target))
+            logger.debug("[{}/{}] work on {}".format(cnt, len(self.targets), target))
 
             if not target:
                 continue

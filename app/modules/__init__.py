@@ -26,6 +26,7 @@ class CollectSource:
     SITESPIDER = "site_spider"
     SEARCHENGINE = "search_engine"
     MONITOR = "monitor"
+    CRTSH = "crtsh"
 
 class TaskStatus:
     WAITING = "waiting"

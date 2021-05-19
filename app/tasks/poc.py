@@ -38,6 +38,7 @@ class RiskCruising():
         self.targets = self.task_data.get("cruising_target")
         self.sniffer_target_set = set()
         self.npoc_service_target_set = set()
+        self.user_target_site_set = set()  # 用户提交的目录站点
         self.site_list = []
         self.site_302_list = []
 
@@ -135,27 +136,27 @@ class RiskCruising():
             utils.conn_db('vuln').insert_one(item)
 
     def find_site(self):
-        targets = []
         for x in self.targets:
             if "://" not in x:
-                targets.append(x)
+                self.user_target_site_set.add("http://{}".format(x))
                 continue
 
             if not x.startswith("http"):
                 continue
 
-            split = x.split("://")
+            cut_target = utils.url.cut_filename(x)
+            if cut_target:
+                self.user_target_site_set.add(cut_target)
 
-            targets.append(split[1])
-
-        sites = services.probe_http(targets)
-        self.site_list.extend(sites)
 
     def fetch_site(self):
-        site_info_list = services.fetch_site(self.site_list)
+        site_info_list = services.fetch_site(self.user_target_site_set)
         for site_info in site_info_list:
             curr_site = site_info["site"]
-            if curr_site not in self.site_list:
+
+            self.site_list.append(curr_site)
+
+            if curr_site not in self.user_target_site_set:
                 self.site_302_list.append(curr_site)
             site_path = "/image/" + self.task_id
             file_name = '{}/{}.jpg'.format(site_path, utils.gen_filename(curr_site))
