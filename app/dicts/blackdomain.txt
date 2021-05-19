@@ -24,3 +24,4 @@
 .o.tencent.com
 .o.qcloud.com
 .mur.qq.com
+.waf.taobao.com

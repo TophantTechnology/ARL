@@ -39,7 +39,8 @@ domain_config_fields = ns.model('domainConfig', {
     "domain_brute_type": fields.String(description="域名爆破类型(big)", example="big"),
     "alt_dns": fields.Boolean(description="DNS字典智能生成", default=True),
     "riskiq_search": fields.Boolean(description="RiskIQ 调用", default=True),
-    "arl_search": fields.Boolean(description="ARL 历史查询", default=True)
+    "arl_search": fields.Boolean(description="ARL 历史查询", default=True),
+    "crtsh_search": fields.Boolean(description="crtsh 查询", default=True)
 })
 
 '''IP 相关配置选项'''

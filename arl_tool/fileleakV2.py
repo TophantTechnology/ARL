@@ -45,7 +45,7 @@ def http_req(url, method = 'get', **kwargs):
     if settings.proxy:
         kwargs["proxies"] = proxies
 
-    conn =   getattr(requests, method)(url, **kwargs)
+    conn = getattr(requests, method)(url, **kwargs)
 
     return conn
 
@@ -479,11 +479,6 @@ class FileLeak(BaseThread):
             for url_404 in url_404_list:
                 page_404 = Page(self.http_req(url_404))
                 self.page404_set.add(page_404)
-
-                if page_404.is_302():
-                    self.location_404_url.add(page_404.location_url)
-                    if page.location_url in self.location_404_url:
-                        self.page404_set.add(page)
 
                 if page_404.is_302() and page_404.location_url.endswith(page_404.url.payload + "/"):
                     self.page404_set.add(page)

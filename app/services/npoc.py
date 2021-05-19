@@ -183,7 +183,18 @@ def run_risk_cruising(plugins, targets):
 def run_sniffer(targets):
     n = NPoC(concurrency=15, tmp_dir=Config.TMP_PATH)
     x = n.plugin_name_list
-    items = n.run_poc(n.sniffer_plugin_name_set, targets)
+    new_targets = []
+
+    ##跳过80 和 443 的识别
+    for t in targets:
+        t = t.strip()
+        if t.endswith(":80"):
+            continue
+        if t.endswith(":443"):
+            continue
+        new_targets.append(t)
+
+    items = n.run_poc(n.sniffer_plugin_name_set, new_targets)
     ret = []
     for x in items:
         target = x["verify_data"]

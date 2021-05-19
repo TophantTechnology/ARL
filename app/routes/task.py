@@ -35,7 +35,8 @@ base_search_task_fields = {
     'options.search_engines': fields.Boolean(description="是否开启搜索引擎调用"),
     'options.site_spider': fields.Boolean(description="是否开启站点爬虫"),
     'options.riskiq_search': fields.Boolean(description="是否开启 Riskiq 调用"),
-    'options.arl_search': fields.Boolean(description="是否开启 ARL 历史查询")
+    'options.arl_search': fields.Boolean(description="是否开启 ARL 历史查询"),
+    'options.crtsh_search': fields.Boolean(description="是否开启 crt.sh 查询")
 
 }
 
@@ -65,7 +66,8 @@ add_task_fields = ns.model('AddTask', {
     "ssl_cert": fields.Boolean(),
     "fetch_api_path": fields.Boolean(),
     "fofa_search": fields.Boolean(),
-    "sub_takeover": fields.Boolean()
+    "sub_takeover": fields.Boolean(),
+    "crtsh_search": fields.Boolean(example=True, default=True)
 })
 
 
