@@ -68,16 +68,17 @@ docker-compose up -d
 | 6    | DNS字典智能生成 | 根据已有的域名生成字典进行爆破                                                      |
 | 7    | Riskiq 调用    | 利用[RiskIQ](https://community.riskiq.com/)  API进行查询域名                       |
 | 8    | ARL 历史查询    | 对arl历史任务结果进行查询用于本次任务                                                |
-| 9    | 端口扫描        | 是否开启端口扫描，不开启站点会默认探测80,443                                         |
-| 10   | 服务识别        | 是否进行服务识别，有可能会被防火墙拦截导致结果为空                                     |
-| 11   | 操作系统识别    | 是否进行操作系统识别，有可能会被防火墙拦截导致结果为空                                 |
-| 12   | Fofa IP查询    | 利用[Fofa](https://fofa.so/)  API进行查询域名                                      |
-| 13   | SSL 证书获取    | 对端口进行SSL 证书获取                                                             |
-| 14   | 站点识别        | 对站点进行指纹识别                                                                 |
-| 15   | 搜索引擎调用    | 利用搜索引擎结果爬取对应的URL                                                       |
-| 16   | 站点爬虫        | 利用静态爬虫对站点进行爬取对应的URL                                                  |
-| 17   | 站点截图        | 对站点首页进行截图                                                                 |
-| 18   | 文件泄露        | 对站点进行文件泄露检测，会被WAF拦截                                                  |
+| 9    | crt.sh 调用    | 利用 crt.sh 网站 API 进行子域名发现                                                 |
+| 10    | 端口扫描        | 是否开启端口扫描，不开启站点会默认探测80,443                                         |
+| 11   | 服务识别        | 是否进行服务识别，有可能会被防火墙拦截导致结果为空                                     |
+| 12   | 操作系统识别    | 是否进行操作系统识别，有可能会被防火墙拦截导致结果为空                                 |
+| 13   | Fofa IP查询    | 利用[Fofa](https://fofa.so/)  API进行查询域名                                      |
+| 14   | SSL 证书获取    | 对端口进行SSL 证书获取                                                             |
+| 15   | 站点识别        | 对站点进行指纹识别                                                                 |
+| 16   | 搜索引擎调用    | 利用搜索引擎结果爬取对应的URL                                                       |
+| 17   | 站点爬虫        | 利用静态爬虫对站点进行爬取对应的URL                                                  |
+| 18   | 站点截图        | 对站点首页进行截图                                                                 |
+| 19   | 文件泄露        | 对站点进行文件泄露检测，会被WAF拦截                                                  |
 
 
 ### 配置参数说明
@@ -153,15 +154,6 @@ rabbitmqctl add_user arl arlpassword
 rabbitmqctl add_vhost arlv2host
 rabbitmqctl set_user_tags arl arltag
 rabbitmqctl set_permissions -p arlv2host arl ".*" ".*" ".*"
-```
-
-#### 本地编译Docker镜像 并启动
-
-```
-docker build  -t arl_worker:v2 -f docker/worker/Dockerfile .
-cd docker
-pip install docker-compose
-docker-compose up -d
 ```
 
 #### 配置GeoIP 数据库
