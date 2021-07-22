@@ -112,54 +112,26 @@ db.user.insert({ username: 'admin',  password: hex_md5('arlsalt!@#'+'admin123') 
 ```
 
 
-### 本地安装
+### 源码安装
 
-下载安装phantomjs,要添加到环境变量
-
-http://phantomjs.org/download.html
+仅仅适配了 centos 7 ，且灯塔安装目录为/opt/ARL
+如果在其他目录可以创建软连接，且安装了三个服务分别为`arl-web`, `arl-worker`, `arl-scheduler`
 
 ```
-yum install epel-release
-yum install mongodb-server mongodb rabbitmq-server supervisor
-yum install wqy-microhei-fonts fontconfig
-```
-
-或者
-```
-sudo apt-get install mongodb-server rabbitmq-server supervisor
-sudo apt-get install xfonts-wqy libfontconfig
+wget https://raw.githubusercontent.com/TophantTechnology/ARL/master/misc/setup-arl.sh
+chmod +x setup-arl.sh
+./setup-arl.sh
 ```
 
 
-#### 安装 Nmap
+### Docker 环境安装
 
-##### Ubuntu
+仅仅适配了 centos 7 ，且灯塔安装目录为/opt/ARL
 ```
-apt remove nmap
-apt remove ndiff
-apt install alien
-wget https://nmap.org/dist/nmap-7.80-1.x86_64.rpm
-alien -i nmap-7.80-1.x86_64.rpm
+wget https://raw.githubusercontent.com/TophantTechnology/ARL/master/misc/setup-docker-arl.sh
+chmod +x setup-docker-arl.sh
+./setup-docker-arl.sh
 ```
-
-##### CentOS
-```
-rpm -vhU https://nmap.org/dist/nmap-7.80-1.x86_64.rpm
-```
-
-##### 配置RabbitMQ
-
-```
-rabbitmqctl add_user arl arlpassword
-rabbitmqctl add_vhost arlv2host
-rabbitmqctl set_user_tags arl arltag
-rabbitmqctl set_permissions -p arlv2host arl ".*" ".*" ".*"
-```
-
-#### 配置GeoIP 数据库
-
-由于官方政策更新请前往[maxmind](https://dev.maxmind.com/geoip/geoip2/geolite2/) 注册下载GeoLite2-City.tar.gz，GeoLite2-ASN.tar.gz 解压。  
-在config.yaml中配置好相关路径
 
 ### FAQ
 

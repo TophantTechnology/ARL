@@ -20,10 +20,13 @@ from .time import curr_date, time2date, curr_date_obj
 from .url import rm_similar_url, get_hostname, normal_url, same_netloc, verify_cert, url_ext
 from .cert import get_cert
 from .arlupdate import arl_update
+from .cdn import get_cdn_name_by_cname, get_cdn_name_by_ip
+from .device import device_info
 
 def load_file(path):
     with open(path, "r+", encoding="utf-8") as f:
         return f.readlines()
+
 
 def exec_system(cmd, **kwargs):
     cmd = " ".join(cmd)
@@ -142,12 +145,10 @@ def domain_parsed(domain, fail_silently = True):
             raise e
 
 
-
 def get_fld(domain):
     res = domain_parsed(domain)
     if res:
         return res["fld"]
-
 
 
 def gen_filename(site):
@@ -189,8 +190,6 @@ def kill_child_process(pid):
         child.kill()
 
 
-
-
 def exit_gracefully(signum, frame):
     logger = get_logger()
     logger.info('Receive signal {} frame {}'.format(signum, frame))
@@ -203,6 +202,6 @@ def exit_gracefully(signum, frame):
 
 from .user import user_login, user_login_header, auth, user_logout, change_pass
 from .push import message_push
-
+from .fingerprint import parse_human_rule, transform_rule_map
 
 

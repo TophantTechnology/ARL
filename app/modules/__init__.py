@@ -28,6 +28,7 @@ class CollectSource:
     MONITOR = "monitor"
     CRTSH = "crtsh"
 
+
 class TaskStatus:
     WAITING = "waiting"
     DONE = "done"
@@ -48,6 +49,11 @@ class TaskTag:
     RISK_CRUISING = "risk_cruising"
 
 
+class SiteAutoTag:
+    ENTRY = "入口"
+    INVALID = "无效"
+
+
 class TaskSyncStatus:
     WAITING = "waiting"
     RUNNING = "running"
@@ -58,6 +64,11 @@ class TaskSyncStatus:
 class SchedulerStatus:
     RUNNING = "running"
     STOP = "stop"
+
+
+class AssetScopeType:
+    DOMAIN = "domain"
+    IP = "ip"
 
 
 class PoCCategory:
@@ -79,6 +90,9 @@ class CeleryAction:
     """域名监测任务"""
     DOMAIN_EXEC_TASK = "domain_exec_task"
 
+    """IP 类型监测任务"""
+    IP_EXEC_TASK = "ip_exec_task"
+
     """同步已有任务"""
     DOMAIN_TASK_SYNC_TASK = "domain_task_sync_task"
 
@@ -87,6 +101,10 @@ class CeleryAction:
 
     """PoC运行任务"""
     RUN_RISK_CRUISING = "run_risk_cruising"
+
+    """Fofa 查询任务"""
+    FOFA_TASK = "fofa_task"
+
 
 error_map = {
     'CeleryIdNotFound': {
@@ -232,6 +250,46 @@ error_map = {
     "PolicyDataIsEmpty": {
         "message": "策略数据为空",
         "code": 1103,
+    },
+    "FofaConnectError": {
+        "message": "连接Fofa API异常",
+        "code": 1201,
+    },
+    "FofaKeyError": {
+        "message": "Fofa 认证信息错误",
+        "code": 1202,
+    },
+    "FofaResultEmpty": {
+        "message": "Fofa 查询结果为空",
+        "code": 1203,
+    },
+    "SiteIdNotFound": {
+        "message": "站点没有找到",
+        "code": 1300,
+    },
+    "SiteTagIsExist": {
+        "message": "站点标签已经存在",
+        "code": 1301,
+    },
+    "SiteTagNotExist": {
+        "message": "站点标签没有找到",
+        "code": 1302,
+    },
+    "ScopeTypeIsNotIP": {
+        "message": "资产组IP范围无效",
+        "code": 1303,
+    },
+    "IsForbiddenDomain": {
+        "message": "包含在禁止域名内",
+        "code": 1401,
+    },
+    "RuleInvalid": {
+        "message": "规则无效",
+        "code": 1402,
+    },
+    "Error": {
+        "message": "系统异常",
+        "code": 500,
     }
 }
 
@@ -273,6 +331,14 @@ class ErrorMsg:
     PolicyDataIsEmpty = error_map["PolicyDataIsEmpty"]
     RiskCruisingPoCConfigIsEmpty = error_map["RiskCruisingPoCConfigIsEmpty"]
     BruteTaskBruteConfigIsEmpty = error_map["BruteTaskBruteConfigIsEmpty"]
-
-
+    FofaConnectError = error_map["FofaConnectError"]
+    FofaKeyError = error_map["FofaKeyError"]
+    FofaResultEmpty = error_map["FofaResultEmpty"]
+    SiteIdNotFound = error_map["SiteIdNotFound"]
+    SiteTagIsExist = error_map["SiteTagIsExist"]
+    SiteTagNotExist = error_map["SiteTagNotExist"]
+    ScopeTypeIsNotIP = error_map["ScopeTypeIsNotIP"]
+    IsForbiddenDomain = error_map["IsForbiddenDomain"]
+    RuleInvalid = error_map["RuleInvalid"]
+    Error = error_map["Error"]
 

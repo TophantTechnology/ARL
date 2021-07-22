@@ -1,0 +1,13 @@
+[Unit]
+Description=ARL Worker Service
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/ARL
+ExecStart=/usr/bin/python3.6 -m app.scheduler
+
+[Install]
+WantedBy=multi-user.target
+

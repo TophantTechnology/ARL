@@ -8,6 +8,7 @@ logger = utils.get_logger()
 from bson import ObjectId
 from urllib.parse import urlparse
 from app import services
+from app.services.commonTask import CommonTask
 
 
 def run_risk_cruising(task_id):
@@ -23,8 +24,10 @@ def run_risk_cruising(task_id):
     r.run()
 
 
-class RiskCruising():
+class RiskCruising(CommonTask):
     def __init__(self, task_id):
+        super().__init__(task_id=task_id)
+
         self.task_id = task_id
         query = {"_id": ObjectId(task_id)}
         self.query = query
@@ -224,6 +227,8 @@ class RiskCruising():
             self.file_leak()
             elapse = time.time() - t1
             self.update_services("file_leak", elapse)
+
+        self.insert_task_stat()
 
     def run(self):
         try:

@@ -14,7 +14,9 @@ base_search_fields = {
     'port_info.version': fields.String(description="系统服务版本"),
     'port_info.product': fields.String(description="产品"),
     'os_info.name': fields.String(description="操作系统名称"),
-    "task_id": fields.String(description="任务ID")
+    "task_id": fields.String(description="任务ID"),
+    "ip_type": fields.String(description="IP类型，公网(PUBLIC)和内网(PRIVATE)"),
+    "cdn_name": fields.String(description="CDN 厂商名称")
 }
 
 base_search_fields.update(base_query_fields)

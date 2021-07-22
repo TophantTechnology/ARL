@@ -8,6 +8,7 @@ class TestUtilsPush(unittest.TestCase):
         super(TestUtilsPush, self).__init__(*args, **kwargs)
         self._site_data = None
         self._domain_data = None
+        self._ip_data = None
 
     @property
     def site_data(self):
@@ -29,11 +30,26 @@ class TestUtilsPush(unittest.TestCase):
 
         return self._domain_data
 
-    def test_message_push(self):
+    @property
+    def ip_data(self):
+        if self._ip_data is None:
+            _ip_data = services.build_domain_info(["www.baidu.com", "www.qq.com"])
+            ip_data = []
+            for x in services.port_scan(["1.1.1.1"]):
+                x["geo_asn"] = {
+                    "number": 13335,
+                    "organization": "Cloudflare, Inc."
+                }
+                ip_data.append(x)
+            self._ip_data = ip_data
+
+        return self._ip_data
+
+    def test_message_push_domain(self):
         asset_map = {
             "site": self.site_data,
             "domain": self.domain_data,
-            "task_name": "灯塔测试"
+            "task_name": "灯塔测试域名"
         }
         asset_counter = {
             "site": 10,
@@ -43,15 +59,44 @@ class TestUtilsPush(unittest.TestCase):
         ret = p.push_dingding()
         self.assertTrue(ret)
 
-    def test_push_email(self):
+    def test_message_push_ip(self):
+        asset_map = {
+            "site": self.site_data,
+            "ip": self.ip_data,
+            "task_name": "灯塔测试 IP"
+        }
+        asset_counter = {
+            "site": 10,
+            "ip": 10
+        }
+        p = push.Push(asset_map=asset_map, asset_counter=asset_counter)
+        ret = p.push_dingding()
+        self.assertTrue(ret)
+
+    def test_push_email_domain(self):
         asset_map = {
             "site": self.site_data,
             "domain": self.domain_data,
-            "task_name": "灯塔测试"
+            "task_name": "灯塔测试域名"
         }
         asset_counter = {
             "site": 10,
             "domain": 10
+        }
+
+        p = push.Push(asset_map=asset_map, asset_counter=asset_counter)
+        ret = p.push_email()
+        self.assertTrue(ret)
+
+    def test_push_email_ip(self):
+        asset_map = {
+            "site": self.site_data,
+            "ip": self.ip_data,
+            "task_name": "灯塔测试 IP"
+        }
+        asset_counter = {
+            "site": 10,
+            "ip": 10
         }
 
         p = push.Push(asset_map=asset_map, asset_counter=asset_counter)

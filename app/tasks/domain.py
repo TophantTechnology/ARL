@@ -1,15 +1,17 @@
 import time
 import random
+import copy
 from urllib.parse import urlparse
 from collections import Counter
-from app import  utils
+from app import utils
 logger = utils.get_logger()
 from app.config import Config
-from app import  services
-from app import  modules
+from app import services
+from app import modules
 from app.modules import ScanPortType, DomainDictType, CollectSource, TaskStatus
 from app.services import fetchCert, run_risk_cruising, run_sniffer
-from bson.objectid import  ObjectId
+from app.services.commonTask import CommonTask
+from bson.objectid import ObjectId
 '''
 域名爆破
 '''
@@ -120,6 +122,9 @@ class ScanPort():
     def __init__(self, domain_info_list, option):
         self.domain_info_list = domain_info_list
         self.ipv4_map = {}
+        self.ip_cdn_map = {}
+        self.have_cdn_ip_list = []
+        self.skip_scan_cdn_ip = False
 
         if option is None:
             option = {
@@ -128,8 +133,33 @@ class ScanPort():
                 "os_detect": False
             }
 
+        if 'skip_scan_cdn_ip' in option:
+            self.skip_scan_cdn_ip = option["skip_scan_cdn_ip"]
+
+        del option["skip_scan_cdn_ip"]
+
         self.option = option
 
+    def get_cdn_name(self, ip, domain_info):
+        cdn_name = utils.get_cdn_name_by_ip(ip)
+        if cdn_name:
+            return cdn_name
+
+        if domain_info.type != "CNAME":
+            return ""
+
+        if not domain_info.record_list:
+            return ""
+
+        cname = domain_info.record_list[0]
+        cdn_name = utils.get_cdn_name_by_cname(cname)
+        if cdn_name:
+            return cdn_name
+
+        if len(domain_info.ip_list) >= 4:
+            return "CDN"
+
+        return ""
 
     def run(self):
         for info in self.domain_info_list:
@@ -138,7 +168,15 @@ class ScanPort():
                 old_domain.add(info.domain)
                 self.ipv4_map[ip] = old_domain
 
+                if ip not in self.ip_cdn_map:
+                    cdn_name = self.get_cdn_name(ip, info)
+                    self.ip_cdn_map[ip] = cdn_name
+                    if cdn_name:
+                        self.have_cdn_ip_list.append(ip)
+
         all_ipv4_list = self.ipv4_map.keys()
+        if self.skip_scan_cdn_ip:
+            all_ipv4_list = list(set(all_ipv4_list) - set(self.have_cdn_ip_list))
 
         start_time = time.time()
         logger.info("start port_scan {}".format(len(all_ipv4_list)))
@@ -152,6 +190,7 @@ class ScanPort():
         for result in ip_port_result:
             curr_ip = result["ip"]
             result["domain"] = list(self.ipv4_map[curr_ip])
+            result["cdn_name"] = self.ip_cdn_map.get(curr_ip, "")
 
             port_info_obj_list = []
             for port_info in result["port_info"]:
@@ -161,7 +200,49 @@ class ScanPort():
 
             ip_info_obj.append(modules.IPInfo(**result))
 
+        if self.skip_scan_cdn_ip:
+            fake_cdn_ip_info = self.build_fake_cdn_ip_info()
+            ip_info_obj.extend(fake_cdn_ip_info)
+
         return ip_info_obj
+
+    def build_fake_cdn_ip_info(self):
+        ret = []
+        map_80_port = {
+            "port_id": 80,
+            "service_name": "http",
+            "version": "",
+            "protocol": "tcp",
+            "product": ""
+        }
+        fake_80_port = modules.PortInfo(**map_80_port)
+
+        map_443_port = {
+            "port_id": 443,
+            "service_name": "https",
+            "version": "",
+            "protocol": "tcp",
+            "product": ""
+        }
+        fake_443_port = modules.PortInfo(**map_443_port)
+        fake_port_info = [fake_80_port, fake_443_port]
+
+        for ip in self.ip_cdn_map:
+            cdn_name = self.ip_cdn_map[ip]
+            if not cdn_name:
+                continue
+
+            item = {
+                "ip": ip,
+                "domain": list(self.ipv4_map[ip]),
+                "port_info": copy.deepcopy(fake_port_info),
+                "cdn_name": cdn_name,
+                "os_info": {}
+
+            }
+            ret.append(modules.IPInfo(**item))
+
+        return ret
 
 
 '''
@@ -340,9 +421,6 @@ class SearchEngines():
         return urls
 
 
-
-
-
 class fofaSearch():
     def __init__(self, domain_info_list, base_doamin):
         self.domain_info_list = domain_info_list
@@ -381,18 +459,14 @@ class fofaSearch():
                 return
 
 
-
-
-
 def domain_brute(base_domain, word_file = Config.DOMAIN_DICT_2W):
     b = DomainBrute(base_domain, word_file)
-    return  b.run()
-
+    return b.run()
 
 
 def scan_port(domain_info_list, option = None):
     s = ScanPort(domain_info_list, option)
-    return  s.run()
+    return s.run()
 
 
 def search_engines(sites):
@@ -444,10 +518,15 @@ sub_takeover
 
 MAX_MAP_COUNT = 35
 
-class DomainTask():
-    def __init__(self, base_domain = None, task_id = None, options = None):
+
+class DomainTask(CommonTask):
+    def __init__(self, base_domain=None, task_id=None, options=None):
+        super().__init__(task_id=task_id)
+
         self.base_domain = base_domain
         self.task_id = task_id
+        # 暂时硬编码为跳过CDN IP扫描
+        options["skip_scan_cdn_ip"] = True
         self.options = options
 
         self.domain_info_list = []
@@ -464,10 +543,10 @@ class DomainTask():
         self.web_analyze_map = {}
         self.cert_map = {}
         self.service_info_list = []
-        #用来区分是正常任务还是监控任务
+        # 用来区分是正常任务还是监控任务
         self.task_tag = "task"
 
-        #用来存放泛解析域名映射的IP
+        # 用来存放泛解析域名映射的IP
         self._not_found_domain_ips = None
 
         self.npoc_service_target_set = set()
@@ -482,7 +561,8 @@ class DomainTask():
         scan_port_option = {
             "ports": scan_port_map.get(option_scan_port_type, ScanPortType.TEST),
             "service_detect": self.options.get("service_detection", False),
-            "os_detect": self.options.get("os_detection", False)
+            "os_detect": self.options.get("os_detection", False),
+            "skip_scan_cdn_ip": self.options.get("skip_scan_cdn_ip", False)  # 跳过扫描CDN IP
         }
         self.scan_port_option = scan_port_option
 
@@ -665,6 +745,7 @@ class DomainTask():
         '''***站点信息获取***'''
         site_info_list = services.fetch_site(self.site_list)
         self.site_info_list = site_info_list
+
         for site_info in site_info_list:
             curr_site = site_info["site"]
             if curr_site not in self.site_list:
@@ -674,22 +755,18 @@ class DomainTask():
             site_info["task_id"] = self.task_id
             site_info["screenshot"] = file_name
 
-            finger_list = self.web_analyze_map.get(curr_site, [])
-            site_info["finger"] = finger_list
+            # 调用读取站点识别的结果，并且去重
+            if self.web_analyze_map:
+                finger_list = self.web_analyze_map.get(curr_site, [])
+                known_finger_set = set()
+                for finger_item in site_info["finger"]:
+                    known_finger_set.add(finger_item["name"].lower())
 
-            if self.options.get("site_identify"):
-                web_app_finger = services.web_app_identify(site_info)
-                flag = False
-                if web_app_finger and finger_list:
-                    for finger in finger_list:
-                        if finger["name"].lower() == web_app_finger["name"].lower():
-                            flag = True
-                            break
+                for analyze_finger in finger_list:
+                    analyze_name = analyze_finger["name"].lower()
+                    if analyze_name not in known_finger_set:
+                        site_info["finger"].append(analyze_finger)
 
-                if not flag and web_app_finger:
-                    finger_list.append(web_app_finger)
-
-            
             utils.conn_db('site').insert_one(site_info)
 
     def site_screenshot(self):
@@ -697,7 +774,6 @@ class DomainTask():
         capture_sites = self.site_list + self.site_302_list
         capture_save_dir = Config.SCREENSHOT_DIR + "/" + self.task_id
         services.site_screenshot(capture_sites, concurrency=6, capture_dir=capture_save_dir)
-
 
     def update_services(self, services, elapsed):
         elapsed = "{:.2f}".format(elapsed)
@@ -711,8 +787,6 @@ class DomainTask():
         update = {"$set": {field: value}}
         utils.conn_db('task').update_one(query, update)
 
-
-
     def gen_ipv4_map(self):
         ipv4_map = {}
         for domain_info in self.domain_info_list:
@@ -724,8 +798,7 @@ class DomainTask():
 
         self.ipv4_map = ipv4_map
 
-
-    #只是保存没有开放端口的
+    # 只是保存没有开放端口的
     def save_ip_info(self):
         fake_ip_info_list = []
         for ip in self.ipv4_map:
@@ -733,7 +806,8 @@ class DomainTask():
                 "ip": ip,
                 "domain": list(self.ipv4_map[ip]),
                 "port_info": [],
-                "os_info": {}
+                "os_info": {},
+                "cdn_name": utils.get_cdn_name_by_ip(ip)
             }
             info_obj = modules.IPInfo(**data)
             if info_obj not in self.ip_info_list:
@@ -841,32 +915,34 @@ class DomainTask():
                     self.fofa_ip_set.add(ip)
 
             if self.options.get("port_scan"):
-                ip_port_result = services.port_scan(self.fofa_ip_set, **self.scan_port_option)
+                port_scan_options = self.scan_port_option.copy()
+                if 'skip_scan_cdn_ip' in port_scan_options:
+                    port_scan_options.pop('skip_scan_cdn_ip')
+
+                ip_port_result = services.port_scan(self.fofa_ip_set, **port_scan_options)
+
                 for ip_info in ip_port_result:
                     ip_info["domain"] = ["*.{}".format(self.base_domain)]
                     port_info_obj_list = []
                     for port_info in ip_info["port_info"]:
                         port_info_obj_list.append(modules.PortInfo(**port_info))
                     ip_info["port_info"] = port_info_obj_list
-
+                    ip_info["cdn_name"] = utils.get_cdn_name_by_ip(ip_info["ip"])
                     fake_info_obj = modules.IPInfo(**ip_info)
                     fake_ip_info = fake_info_obj.dump_json(flag=False)
                     fake_ip_info["task_id"] = self.task_id
                     utils.conn_db('ip').insert_one(fake_ip_info)
 
             for ip in self.fofa_ip_set:
-                self.ipv4_map[ip] =  ["*.{}".format(self.base_domain)]
-
+                self.ipv4_map[ip] = ["*.{}".format(self.base_domain)]
 
             logger.info("fofa search {} {}".format(self.base_domain, len(self.fofa_ip_set)))
         except Exception as e:
             logger.exception(e)
             logger.warning("fofa search error {}, {}".format(self.base_domain, e))
 
-
     def site_identify(self):
         self.web_analyze_map = services.web_analyze(self.site_list)
-
 
     def ssl_cert(self):
         if self.options.get("port_scan"):
@@ -896,7 +972,6 @@ class DomainTask():
                 item["site"] = site
 
                 utils.conn_db('fileleak').insert_one(item)
-
 
     def build_single_domain_info(self, domain):
         _type = "A"
@@ -1127,7 +1202,6 @@ class DomainTask():
             item["save_date"] = utils.curr_date()
             utils.conn_db('vuln').insert_one(item)
 
-
     def run(self):
 
         self.update_task_field("start_time", utils.curr_date())
@@ -1139,6 +1213,12 @@ class DomainTask():
         self.start_site_fetch()
 
         self.start_poc_run()
+
+        # cidr ip 结果统计，插入cip 集合中
+        self.insert_cip_stat()
+
+        # 任务结果统计
+        self.insert_task_stat()
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())

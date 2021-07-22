@@ -1,6 +1,6 @@
 from bson import ObjectId
 from .conn import conn_db
-
+from .IPy import IP
 
 def get_task_ids(domain):
     query = {"target": domain}
@@ -67,3 +67,46 @@ def get_scope_ids(domain):
         scope_ids.append(str(item["_id"]))
 
     return scope_ids
+
+
+def task_statistic(task_id=None):
+    """对任务中的资产信息进行统计"""
+    query = dict()
+    if isinstance(task_id, str) and len(task_id) == 24:
+        query["task_id"] = task_id
+
+    ret = dict()
+    table_list = ['site', 'domain', 'ip', 'cert', 'service', 'fileleak']
+    table_list.extend(['url', 'vuln', 'npoc_service', 'cip'])
+    for table in table_list:
+        cnt = conn_db(table).count_documents(query)
+        stat_key = table + "_cnt"
+        ret[stat_key] = cnt
+
+    return ret
+
+
+def gen_cip_map(task_id=None):
+    query = dict()
+    if isinstance(task_id, str) and len(task_id) == 24:
+        query["task_id"] = task_id
+
+    results = list(conn_db('ip').find(query, {"ip": 1, "domain": 1}))
+    cip_map = dict()
+    for result in results:
+        if result.get("domain") is None:
+            continue
+
+        cip = result["ip"] + "/24"
+        cip = IP(cip, make_net=True).strNormal(1)
+        count_map = cip_map.get(cip)
+        if count_map is None:
+            cip_map[cip] = {
+                "domain_set": set(result["domain"]),
+                "ip_set": {result["ip"]}
+            }
+        else:
+            count_map["domain_set"] |= set(result["domain"])
+            count_map["ip_set"] |= {result["ip"]}
+
+    return cip_map

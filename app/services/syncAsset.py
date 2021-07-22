@@ -85,5 +85,11 @@ def sync_asset(task_id, scope_id, update_flag=False,  category=None, push_flag=F
     sync = SyncAsset(task_id=task_id, scope_id=scope_id,
                      update_flag=update_flag, category=category, task_name=task_name)
     new_asset_map, new_asset_counter = sync.run()
+    if 'ip' in new_asset_map:
+        new_asset_map.pop('ip')
+
+    if 'ip' in new_asset_counter:
+        new_asset_counter.pop('ip')
+
     if push_flag:
         utils.message_push(asset_map=new_asset_map, asset_counter=new_asset_counter)

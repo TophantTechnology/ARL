@@ -36,7 +36,8 @@ base_search_task_fields = {
     'options.site_spider': fields.Boolean(description="是否开启站点爬虫"),
     'options.riskiq_search': fields.Boolean(description="是否开启 Riskiq 调用"),
     'options.arl_search': fields.Boolean(description="是否开启 ARL 历史查询"),
-    'options.crtsh_search': fields.Boolean(description="是否开启 crt.sh 查询")
+    'options.crtsh_search': fields.Boolean(description="是否开启 crt.sh 查询"),
+    'options.skip_scan_cdn_ip': fields.Boolean(description="是否跳过CDN IP端口扫描")
 
 }
 
@@ -49,7 +50,7 @@ add_task_fields = ns.model('AddTask', {
     'target': fields.String(required=True, description="目标"),
     "domain_brute": fields.Boolean(),
     'domain_brute_type': fields.String(),
-    "port_scan_type": fields.String(description="目标"),
+    "port_scan_type": fields.String(description="端口扫描类型"),
     "port_scan": fields.Boolean(),
     "service_detection": fields.Boolean(),
     "service_brute": fields.Boolean(example=False),
@@ -67,7 +68,8 @@ add_task_fields = ns.model('AddTask', {
     "fetch_api_path": fields.Boolean(),
     "fofa_search": fields.Boolean(),
     "sub_takeover": fields.Boolean(),
-    "crtsh_search": fields.Boolean(example=True, default=True)
+    "crtsh_search": fields.Boolean(example=True, default=True),
+    "skip_scan_cdn_ip": fields.Boolean()
 })
 
 
@@ -122,6 +124,9 @@ class ARLTask(ARLResource):
             if not utils.is_valid_domain(item) and not utils.is_vaild_ip_target(item):
                 return utils.build_ret(ErrorMsg.TargetInvalid, data={"target": item})
 
+            if utils.domain.is_forbidden_domain(item):
+                return utils.build_ret(ErrorMsg.IsForbiddenDomain, data={"target": item})
+
             if utils.is_vaild_ip_target(item):
                 if not utils.not_in_black_ips(item):
                     return utils.build_ret(ErrorMsg.IPInBlackIps, data={"ip": item})
@@ -135,6 +140,9 @@ class ARLTask(ARLResource):
                 domain_task_data = task_data.copy()
                 domain_task_data["target"] = item
                 _task_data = submit_task(domain_task_data)
+                if isinstance(_task_data, str):
+                    return utils.build_ret(ErrorMsg.Error, {"error": _task_data})
+
                 ret_item["task_id"] = _task_data.get("task_id", "")
                 ret_item["celery_id"] = _task_data.get("celery_id", "")
                 ret_items.append(ret_item)
@@ -160,8 +168,6 @@ class ARLTask(ARLResource):
                 }
                 ret_items.append(ret_item)
 
-
-
         if ip_target_list:
             ip_task_data = task_data.copy()
             ip_task_data["target"] = " ".join(ip_target_list)
@@ -173,6 +179,8 @@ class ARLTask(ARLResource):
             }
 
             _task_data = submit_task(ip_task_data)
+            if isinstance(_task_data, str):
+                return utils.build_ret(ErrorMsg.Error, {"error": _task_data})
 
             ret_item["task_id"] = _task_data.get("task_id", "")
             ret_item["celery_id"] = _task_data.get("celery_id", "")
@@ -206,13 +214,19 @@ def submit_task(task_data):
         "celery_action": celery_action,
         "data": task_data
     }
-    celery_id = celerytask.arl_task.delay(options=task_options)
 
-    logger.info("target:{} task_id:{} celery_id:{}".format(target, task_id, celery_id))
+    try:
+        celery_id = celerytask.arl_task.delay(options = task_options)
+        logger.info("target:{} task_id:{} celery_id:{}".format(target, task_id, celery_id))
 
-    values = {"$set": {"celery_id": str(celery_id)}}
-    task_data["celery_id"] = str(celery_id)
-    conn('task').update_one({"_id": ObjectId(task_id)}, values)
+        values = {"$set": {"celery_id": str(celery_id)}}
+        task_data["celery_id"] = str(celery_id)
+        conn('task').update_one({"_id": ObjectId(task_id)}, values)
+
+    except Exception as e:
+        conn('task').delete_one({"_id": ObjectId(task_id), "status" : TaskStatus.WAITING})
+        logger.info("下发失败 {}".format(target))
+        return str(e)
 
     return task_data
 
@@ -328,7 +342,7 @@ class SyncTask(ARLResource):
     @ns.expect(sync_task_fields)
     def post(self):
         """
-        任务同步
+        将任务结果同步到资产组
         """
         done_status = [TaskStatus.DONE, TaskStatus.STOP, TaskStatus.ERROR]
         args = self.parse_args(sync_task_fields)
@@ -379,15 +393,16 @@ sync_scope_fields = ns.model('SyncScope',  {
 })
 
 
+# ******* 根据目标找到要同步的资产分组ID *********
 @ns.route('/sync_scope/')
-class SyncTask(ARLResource):
+class Target2Scope(ARLResource):
     parser = get_arl_parser(sync_scope_fields, location='args')
 
     @auth
     @ns.expect(parser)
     def get(self):
         """
-        任务同步资产组查询
+        从目标映反查资产分组
         """
         args = self.parser.parse_args()
         target = args.pop("target")
@@ -419,6 +434,7 @@ task_by_policy_fields = ns.model('TaskByPolicy', {
 })
 
 
+# ******* 通过指定策略ID 下发任务 *********
 @ns.route('/policy/')
 class TaskByPolicy(ARLResource):
     @auth
@@ -509,7 +525,11 @@ class TaskByPolicy(ARLResource):
                 "type": TaskTag.RISK_CRUISING
             }
             task_data["target"] = target_field
+
             _task_data = submit_task(task_data)
+            if isinstance(_task_data, str):
+                return utils.build_ret(ErrorMsg.Error, {"error": _task_data})
+
             ret_item["task_id"] = _task_data.get("task_id", "")
             ret_item["celery_id"] = _task_data.get("celery_id", "")
             return utils.build_ret(ErrorMsg.Success, {"items": [ret_item]})
@@ -539,7 +559,6 @@ class TaskByPolicy(ARLResource):
         options.update(policy)
         return options
 
-
     def _add_task(self, target_lists, task_data):
         try:
             ip_list, domain_list = self._get_ip_domain_list(target_lists)
@@ -548,9 +567,16 @@ class TaskByPolicy(ARLResource):
 
         ret_items = []
         if domain_list:
-            ret_items.extend(self._submit_domain_list(domain_list, task_data))
+            submit_result = self._submit_domain_list(domain_list, task_data)
+            if isinstance(submit_result, str):
+                return utils.build_ret(ErrorMsg.Error, {"error": submit_result})
+            ret_items.extend(submit_result)
+
         if ip_list:
-            ret_items.extend(self._submit_ip_list(ip_list, task_data))
+            submit_result = self._submit_ip_list(ip_list, task_data)
+            if isinstance(submit_result, str):
+                return utils.build_ret(ErrorMsg.Error, {"error": submit_result})
+            ret_items.extend(submit_result)
 
         if not ret_items:
             return utils.build_ret(ErrorMsg.TaskTargetIsEmpty, {})
@@ -567,6 +593,9 @@ class TaskByPolicy(ARLResource):
             domain_task_data = task_data.copy()
             domain_task_data["target"] = item
             _task_data = submit_task(domain_task_data)
+            if isinstance(_task_data, str):
+                return _task_data
+
             ret_item["task_id"] = _task_data.get("task_id", "")
             ret_item["celery_id"] = _task_data.get("celery_id", "")
             ret.append(ret_item)
@@ -583,6 +612,9 @@ class TaskByPolicy(ARLResource):
             "type": ip_task_data["type"]
         }
         _task_data = submit_task(ip_task_data)
+        if isinstance(_task_data, str):
+            return _task_data
+
         item["task_id"] = _task_data.get("task_id", "")
         item["celery_id"] = _task_data.get("celery_id", "")
         ret.append(item)
@@ -599,6 +631,9 @@ class TaskByPolicy(ARLResource):
                 if not utils.not_in_black_ips(item):
                     raise Exception("{} 在黑名单IP中".format(item))
                 ip_list.add(item)
+
+            elif utils.domain.is_forbidden_domain(item):
+                raise Exception("{} 包含在禁止域名内".format(item))
 
             elif utils.is_valid_domain(item):
                 domain_list.add(item)

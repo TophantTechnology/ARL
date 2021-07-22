@@ -14,8 +14,10 @@ options = {
     'arl_search': False,
     'port_scan_type': 'test',
     'port_scan': True,
+    'crtsh_search': False,
     'site_identify': True
 }
+
 
 class TestScheduler(unittest.TestCase):
     def test_01_domain_execute(self):

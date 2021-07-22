@@ -26,6 +26,13 @@ def crtsh_search(domain):
                 name = name.strip()
                 name = name.strip("*.")
                 name = name.lower()
+
+                if "@" in name:
+                    continue
+
+                if not utils.domain_parsed(domain):
+                    continue
+
                 if name.endswith("."+domain):
                     name_list.append(name)
 

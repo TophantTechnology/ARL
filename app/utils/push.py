@@ -20,7 +20,9 @@ class Push(object):
         self.asset_counter = asset_counter
         self._domain_info_list = None
         self._site_info_list = None
+        self._ip_info_list = None
         self.domain_len = self.asset_counter.get("domain", 0)
+        self.ip_len = self.asset_counter.get("ip", 0)
         self.site_len = self.asset_counter.get("site", 0)
         self.task_name = self.asset_map.get("task_name", "")
 
@@ -38,6 +40,13 @@ class Push(object):
 
         return self._site_info_list
 
+    @property
+    def ip_info_list(self):
+        if self._ip_info_list is None:
+            self._ip_info_list = self.build_ip_info_list()
+
+        return self._ip_info_list
+
     def build_domain_info_list(self):
         if "domain" not in self.asset_map:
             return []
@@ -50,6 +59,24 @@ class Push(object):
             domain_info_list.append(domain_dict)
 
         return domain_info_list
+
+    def build_ip_info_list(self):
+        if "ip" not in self.asset_map:
+            return []
+        ip_info_list = []
+        for old in self.asset_map["ip"]:
+            ip_dict = dict()
+            port_list = []
+            for port_info in old["port_info"]:
+                port_list.append(str(port_info["port_id"]))
+
+            ip_dict["IP"] = old["ip"]
+            ip_dict["端口数目"] = len(port_list)
+            ip_dict["开放端口"] = ",".join(port_list[:10])
+            ip_dict["组织"] = old["geo_asn"].get("organization")
+            ip_info_list.append(ip_dict)
+
+        return ip_info_list
 
     def build_site_info_list(self):
         if "site" not in self.asset_map:
@@ -65,8 +92,15 @@ class Push(object):
         return site_info_list
 
     def _push_dingding(self):
-        tpl = "[{}]新发现域名 `{}` , 站点 `{}`\n***\n".format(self.task_name, self.domain_len, self.site_len)
-        tpl = "{}\n{}".format(tpl, dict2dingding_mark(self.domain_info_list))
+        tpl = ""
+        if self.domain_len > 0:
+            tpl = "[{}]新发现域名 `{}` , 站点 `{}`\n***\n".format(self.task_name, self.domain_len, self.site_len)
+            tpl = "{}\n{}".format(tpl, dict2dingding_mark(self.domain_info_list))
+
+        if self.ip_len > 0:
+            tpl = "[{}]新发现 IP `{}` , 站点 `{}`\n***\n".format(self.task_name, self.ip_len, self.site_len)
+            tpl = "{}\n{}".format(tpl, dict2dingding_mark(self.ip_info_list))
+
         tpl += "\n***\n"
         tpl = "{}\n{}".format(tpl, dict2dingding_mark(self.site_info_list))
         ding_out = dingding_send(msg=tpl, access_token=Config.DINGDING_ACCESS_TOKEN,
@@ -77,10 +111,19 @@ class Push(object):
         return True
 
     def _push_email(self):
-        tpl = "<div> 新发现域名 {}, 站点 {}\n</div>".format(self.domain_len, self.site_len)
-        html = tpl
-        html += "<br/>"
-        html += dict2table(self.domain_info_list)
+        html = ""
+        if self.domain_len > 0:
+            tpl = "<div> 新发现域名 {}, 站点 {}\n</div>".format(self.domain_len, self.site_len)
+            html = tpl
+            html += "<br/>"
+            html += dict2table(self.domain_info_list)
+
+        if self.ip_len > 0:
+            tpl = "<div> 新发现 IP {}, 站点 {}\n</div>".format(self.ip_len, self.site_len)
+            html = tpl
+            html += "<br/>"
+            html += dict2table(self.ip_info_list)
+
         html += "<br/><br/>"
         html += dict2table(self.site_info_list)
 

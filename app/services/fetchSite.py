@@ -7,13 +7,37 @@ import mmh3
 from app import utils
 from .baseThread import BaseThread
 logger = utils.get_logger()
+from .autoTag import auto_tag
 from app.utils import http_req
+from app.utils.fingerprint import load_fingerprint, fetch_fingerprint
 
 
 class FetchSite(BaseThread):
     def __init__(self, sites, concurrency=6):
         super().__init__(sites, concurrency)
         self.site_info_list = []
+        self.fingerprint_list = load_fingerprint()
+
+    def fetch_fingerprint(self, item, content):
+        favicon_hash = item["favicon"].get("hash", 0)
+        result = fetch_fingerprint(content=content, headers=item["headers"],
+                                   title=item["title"], favicon_hash=favicon_hash,
+                                   finger_list=self.fingerprint_list)
+
+        finger = []
+        for name in result:
+            finger_item = {
+                "icon": "default.png",
+                "name": name,
+                "confidence": "80",
+                "version": "",
+                "website": "https://www.riskivy.com",
+                "categories": []
+            }
+            finger.append(finger_item)
+
+        if finger:
+            item["finger"] = finger
 
     def work(self, site):
         _, hostname, _ = get_host(site)
@@ -22,7 +46,7 @@ class FetchSite(BaseThread):
         item = {
             "site": site,
             "hostname": hostname,
-            "ip":"",
+            "ip": "",
             "title": utils.get_title(conn.content),
             "status": conn.status_code,
             "headers": utils.get_headers(conn),
@@ -31,6 +55,8 @@ class FetchSite(BaseThread):
             "finger": [],
             "favicon": fetch_favicon(site)
         }
+
+        self.fetch_fingerprint(item, content=conn.content)
         domain_parsed = utils.domain_parsed(hostname)
         if domain_parsed:
             item["fld"] = domain_parsed["fld"]
@@ -57,12 +83,15 @@ class FetchSite(BaseThread):
         elapse = time.time() - t1
         logger.info("end fetch site elapse {}".format(elapse))
 
+        # 对站点信息自动打标签
+        auto_tag(self.site_info_list)
+
         return self.site_info_list
 
 
 def fetch_favicon(url):
     f = FetchFavicon(url)
-    return  f.run()
+    return f.run()
 
 
 def fetch_site(sites, concurrency=15):
@@ -70,7 +99,7 @@ def fetch_site(sites, concurrency=15):
     return f.run()
 
 
-class FetchFavicon():
+class FetchFavicon(object):
     def __init__(self, url):
         self.url = url
         self.favicon_url = None
@@ -108,6 +137,12 @@ class FetchFavicon():
 
     def get_favicon_data(self, favicon_url):
         conn = http_req(favicon_url)
+        if conn.status_code != 200:
+            return
+
+        if len(conn.content) <= 80:
+            logger.debug("favicon content len lt 100")
+            return
 
         if "image" in conn.headers.get("Content-Type", ""):
             data = self.encode_bas64_lines(conn.content)

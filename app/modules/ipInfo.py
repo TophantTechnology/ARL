@@ -1,8 +1,9 @@
 from .baseInfo import BaseInfo
 from app import utils
 
+
 class IPInfo(BaseInfo):
-    def __init__(self, ip, port_info, os_info, domain):
+    def __init__(self, ip, port_info, os_info, domain, cdn_name):
         self.ip = ip
         self.port_info_list = port_info
         self.os_info = os_info
@@ -10,7 +11,7 @@ class IPInfo(BaseInfo):
         self._geo_asn = None
         self._geo_city = None
         self._ip_type = None
-
+        self.cdn_name = cdn_name
 
     @property
     def geo_asn(self):
@@ -56,7 +57,6 @@ class IPInfo(BaseInfo):
     def __hash__(self):
         return hash(self.ip)
 
-
     def _dump_json(self):
         port_info = []
         for x in self.port_info_list:
@@ -70,6 +70,7 @@ class IPInfo(BaseInfo):
             "ip_type": self.ip_type,
             "geo_asn": self.geo_asn,
             "geo_city": self.geo_city,
+            "cdn_name": self.cdn_name
         }
         return item
 

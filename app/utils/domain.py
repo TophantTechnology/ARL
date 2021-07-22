@@ -30,6 +30,14 @@ def check_domain_black(domain):
     return False
 
 
+def is_forbidden_domain(domain):
+    for f_domain in Config.FORBIDDEN_DOMAINS:
+        if domain.endswith("." + f_domain):
+            return True
+        if domain == f_domain:
+            return True
+
+    return False
 
 
 def is_valid_domain(domain):
