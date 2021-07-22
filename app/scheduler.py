@@ -4,7 +4,7 @@ from app.utils import conn_db as conn
 from app import utils
 from app import celerytask
 import time
-from app.modules import CeleryAction, SchedulerStatus
+from app.modules import CeleryAction, SchedulerStatus, AssetScopeType
 
 logger = utils.get_logger()
 
@@ -20,10 +20,20 @@ domain_monitor_options = {
 }
 
 
-def add_job(domain, scope_id, options=None, interval=60*1, name=""):
-    logger.info("add job {} {} {}".format(interval, domain, scope_id))
+ip_monitor_options = {
+    'port_scan_type': 'test',
+    'port_scan': True,
+    'site_identify': True
+}
+
+
+def add_job(domain, scope_id, options=None, interval=60*1, name="", scope_type=AssetScopeType.DOMAIN):
+    logger.info("add {} job {} {} {}".format(scope_type, interval, domain, scope_id))
     if options is None:
-        options = domain_monitor_options
+        if scope_type == AssetScopeType.DOMAIN:
+            options = domain_monitor_options
+        if scope_type == AssetScopeType.IP:
+            options = ip_monitor_options
 
     current_time = int(time.time()) + 30
     item = {
@@ -37,7 +47,8 @@ def add_job(domain, scope_id, options=None, interval=60*1, name=""):
         "run_number": 0,
         "status": SchedulerStatus.RUNNING,
         "monitor_options": options,
-        "name": name
+        "name": name,
+        "scope_type": scope_type
 
     }
     conn('scheduler').insert(item)
@@ -86,27 +97,40 @@ def all_job():
     return items
 
 
-def submit_job(domain, job_id, scope_id, options=None, name=""):
+def submit_job(domain, job_id, scope_id, options=None, name="", scope_type=AssetScopeType.DOMAIN):
     monitor_options = domain_monitor_options.copy()
+    if scope_type == AssetScopeType.IP:
+        monitor_options = ip_monitor_options.copy()
+
     if options is None:
         options = {}
 
     monitor_options.update(options)
+
     task_data = {
         "domain": domain,
         "scope_id": scope_id,
         "job_id": job_id,
-        "type": "domain",
+        "type": scope_type,
         "monitor_options": monitor_options,
         "name": name
     }
 
-    task_options = {
-        "celery_action": CeleryAction.DOMAIN_EXEC_TASK,
-        "data": task_data
-    }
-    celery_id = celerytask.arl_task.delay(options=task_options)
-    logger.info("submit job {} {} {}".format(celery_id, domain, scope_id))
+    if scope_type == AssetScopeType.DOMAIN:
+        task_options = {
+            "celery_action": CeleryAction.DOMAIN_EXEC_TASK,
+            "data": task_data
+        }
+        celery_id = celerytask.arl_task.delay(options=task_options)
+        logger.info("submit domain job {} {} {}".format(celery_id, domain, scope_id))
+
+    if scope_type == AssetScopeType.IP:
+        task_options = {
+            "celery_action": CeleryAction.IP_EXEC_TASK,
+            "data": task_data
+        }
+        celery_id = celerytask.arl_task.delay(options=task_options)
+        logger.info("submit ip job {} {} {}".format(celery_id, domain, scope_id))
 
 
 def update_job_run(job_id):
@@ -135,8 +159,13 @@ def run_forever():
                 scope_id = item["scope_id"]
                 options = item["monitor_options"]
                 name = item["name"]
+                scope_type = item.get("scope_type")
+
+                if not scope_type:
+                    scope_type = AssetScopeType.DOMAIN
+
                 submit_job(domain=domain, job_id=str(item["_id"]),
-                           scope_id=scope_id, options=options, name=name)
+                           scope_id=scope_id, options=options, name=name, scope_type=scope_type)
                 item["next_run_time"] = curr_time + item["interval"]
                 item["next_run_date"] = utils.time2date(item["next_run_time"])
                 query = {"_id": item["_id"]}

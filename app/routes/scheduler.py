@@ -3,7 +3,7 @@ from app.utils import get_logger, auth
 from app.modules import ErrorMsg
 from . import base_query_fields, ARLResource, get_arl_parser
 from app import scheduler as app_scheduler, utils
-from app.modules import SchedulerStatus
+from app.modules import SchedulerStatus, AssetScopeType
 
 ns = Namespace('scheduler', description="资产监控任务信息")
 
@@ -16,7 +16,8 @@ base_search_fields = {
     'next_run_date': fields.Integer(description="下一次运行日期"),
     'last_run_time': fields.Integer(description="上一次运行时间戳"),
     'last_run_date': fields.String(description="上一次运行时间日期"),
-    'run_number': fields.String(description="运行次数")
+    'run_number': fields.String(description="运行次数"),
+    "name": fields.String(description="名称")
 }
 
 base_search_fields.update(base_query_fields)
@@ -39,8 +40,8 @@ class ARLScheduler(ARLResource):
 
 
 add_scheduler_fields = ns.model('addScheduler',  {
-    "scope_id": fields.String(description="添加资产范围"),
-    "domain": fields.String(description="域名"),  # 多个域名可以用,隔开
+    "scope_id": fields.String(required=True, description="添加资产范围"),
+    "domain": fields.String(required=True, description="域名"),  # 多个域名可以用,隔开
     "interval": fields.Integer(description="间隔，单位是秒"),  # 单位是S
     "name": fields.String(description="监控任务名称"),  # 名称为空即自动生成
 })
@@ -71,6 +72,11 @@ class AddARLScheduler(ARLResource):
         if not scope_data:
             return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id})
 
+        # 资产范围类型（域名或者是IP）
+        scope_type = scope_data.get("scope_type")
+        if not scope_type:
+            scope_type = AssetScopeType.DOMAIN
+
         domains = domain.split(",")
         for x in domains:
             curr_domain = x.strip()
@@ -83,14 +89,29 @@ class AddARLScheduler(ARLResource):
                                        {"domain": curr_domain, "scope_id": scope_id})
 
         ret_data = []
-        for x in domains:
-            curr_name = name
-            if not name:
-                curr_name = "监控-{}-{}".format(scope_data["name"], x)
+        # 下发 域名类型监控任务
+        if scope_type == AssetScopeType.DOMAIN:
+            for x in domains:
+                curr_name = name
+                if not name:
+                    curr_name = "监控-{}-{}".format(scope_data["name"], x)
 
-            job_id = app_scheduler.add_job(domain=x, scope_id=scope_id,
-                                           options=None, interval=interval, name=curr_name)
-            ret_data.append({"domain": x, "scope_id": scope_id, "job_id": job_id})
+                job_id = app_scheduler.add_job(domain=x, scope_id=scope_id,
+                                               options=None, interval=interval,
+                                               name=curr_name, scope_type=scope_type)
+                ret_data.append({"domain": x, "scope_id": scope_id, "job_id": job_id})
+
+        # 下发IP 类型监控任务
+        if scope_type == AssetScopeType.IP:
+            curr_name = name
+            ip_target = " ".join(domains)
+            if not name:
+                curr_name = "监控-{}-{}".format(scope_data["name"], ip_target)
+
+            job_id = app_scheduler.add_job(domain=ip_target, scope_id=scope_id,
+                                           options=None, interval=interval,
+                                           name=curr_name, scope_type=scope_type)
+            ret_data.append({"domain": ip_target, "scope_id": scope_id, "job_id": job_id})
 
         return utils.build_ret(ErrorMsg.Success, ret_data)
 

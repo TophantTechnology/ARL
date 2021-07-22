@@ -26,7 +26,7 @@ class SiteScreenshot(BaseThread):
                           '-u={}'.format(site),
                           '-s={}'.format(file_name),
                           ]
-        logger.info("screenshot {}".format(" ".join(cmd_parameters)))
+        logger.debug("screenshot {}".format(" ".join(cmd_parameters)))
 
         utils.exec_system(cmd_parameters)
 

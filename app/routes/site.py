@@ -1,4 +1,5 @@
 import copy
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from app.modules import ErrorMsg
@@ -21,6 +22,7 @@ base_search_fields = {
     'status': fields.Integer(description="状态码"),
     'favicon.hash': fields.Integer(description="favicon hash"),
     'task_id': fields.String(description="任务 ID"),
+    'tag': fields.String(description="标签列表")
 }
 
 site_search_fields = copy.copy(base_search_fields)
@@ -93,3 +95,111 @@ class ARLSaveResultSet(ARLResource):
         }
 
         return utils.build_ret(ErrorMsg.Success, ret_data)
+
+
+add_site_tag_fields = ns.model('AddSiteTagFields',  {
+    "tag": fields.String(required=True, description="添加站点标签"),
+    "_id": fields.String(description="站点ID", required=True)
+})
+
+
+@ns.route('/add_tag/')
+class AddSiteTagARL(ARLResource):
+
+    @auth
+    @ns.expect(add_site_tag_fields)
+    def post(self):
+        """
+        站点添加Tag
+        """
+        args = self.parse_args(add_site_tag_fields)
+        site_id = args.pop("_id")
+        tag = args.pop("tag")
+
+        query = {"_id": ObjectId(site_id)}
+        data = utils.conn_db('site').find_one(query)
+        if not data:
+            return utils.build_ret(ErrorMsg.SiteIdNotFound, {"site_id": site_id})
+
+        tag_list = []
+        old_tag = data.get("tag")
+        if old_tag:
+            if isinstance(old_tag, str):
+                tag_list.append(old_tag)
+
+            if isinstance(old_tag, list):
+                tag_list.extend(old_tag)
+
+        if tag in tag_list:
+            return utils.build_ret(ErrorMsg.SiteTagIsExist, {"tag": tag})
+
+        tag_list.append(tag)
+
+        utils.conn_db('site').update_one(query, {"$set": {"tag": tag_list}})
+
+        return utils.build_ret(ErrorMsg.Success, {"tag": tag})
+
+
+delete_site_tag_fields = ns.model('DeleteSiteTagFields',  {
+    "tag": fields.String(required=True, description="删除站点标签"),
+    "_id": fields.String(description="站点ID", required=True)
+})
+
+
+@ns.route('/delete_tag/')
+class DeleteSiteTagARL(ARLResource):
+
+    @auth
+    @ns.expect(delete_site_tag_fields)
+    def post(self):
+        """
+        删除站点Tag
+        """
+        args = self.parse_args(delete_site_tag_fields)
+        site_id = args.pop("_id")
+        tag = args.pop("tag")
+
+        query = {"_id": ObjectId(site_id)}
+        data = utils.conn_db('site').find_one(query)
+        if not data:
+            return utils.build_ret(ErrorMsg.SiteIdNotFound, {"site_id": site_id})
+
+        tag_list = []
+        old_tag = data.get("tag")
+        if old_tag:
+            if isinstance(old_tag, str):
+                tag_list.append(old_tag)
+
+            if isinstance(old_tag, list):
+                tag_list.extend(old_tag)
+
+        if tag not in tag_list:
+            return utils.build_ret(ErrorMsg.SiteTagNotExist, {"tag": tag})
+
+        tag_list.remove(tag)
+
+        utils.conn_db('site').update_one(query, {"$set": {"tag": tag_list}})
+
+        return utils.build_ret(ErrorMsg.Success, {"tag": tag})
+
+
+delete_site_fields = ns.model('deleteSiteFields',  {
+    '_id': fields.List(fields.String(required=True, description="站点 _id"))
+})
+
+
+@ns.route('/delete/')
+class DeleteARLSite(ARLResource):
+    @auth
+    @ns.expect(delete_site_fields)
+    def post(self):
+        """
+        删除站点
+        """
+        args = self.parse_args(delete_site_fields)
+        id_list = args.pop('_id', [])
+        for _id in id_list:
+            query = {'_id': ObjectId(_id)}
+            utils.conn_db('site').delete_one(query)
+
+        return utils.build_ret(ErrorMsg.Success, {'_id': id_list})

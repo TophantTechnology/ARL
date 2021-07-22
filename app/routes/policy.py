@@ -51,6 +51,7 @@ ip_config_fields = ns.model('ipConfig', {
     "os_detection": fields.Boolean(description="操作系统识别", default=False),
     "ssl_cert": fields.Boolean(description="SSL 证书获取", default=False),
     "fofa_search": fields.Boolean(description="Fofa IP查询", default=False),
+    "skip_scan_cdn_ip": fields.Boolean(description="跳过 CDN IP扫描", default=True)
 })
 
 '''站点相关配置选项'''

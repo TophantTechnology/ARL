@@ -25,6 +25,8 @@ class Config(object):
     DOMAIN_DICT_2W = os.path.join(basedir, 'dicts/domain_2w.txt')
     DNS_SERVER = os.path.join(basedir, 'dicts/dnsserver.txt')
 
+    CDN_JSON_PATH = os.path.join(basedir, 'dicts/cdn_info.json')
+
     black_domain_path = os.path.join(basedir, 'dicts/blackdomain.txt')
     black_heixie_path = os.path.join(basedir, 'dicts/blackheixie.txt')
     altdns_dict_path = os.path.join(basedir, 'dicts/altdnsdict.txt')
@@ -65,11 +67,12 @@ class Config(object):
     EMAIL_USERNAME = ""
     EMAIL_PASSWORD = ""
     EMAIL_TO = ""
+    FORBIDDEN_DOMAINS = ["gov.cn", "edu.cn", "org.cn"]
+
 
 try:
     with open(os.path.join(basedir, 'config.yaml')) as f:
         y = yaml.load(f, Loader=yaml.SafeLoader)
-
 
     Config.MONGO_URL = y["MONGO"]["URI"]
     Config.MONGO_DB = y["MONGO"]["DB"]
@@ -106,6 +109,9 @@ try:
         else:
             print("Warning {} is not file".format(domain_dict))
 
+    if y["ARL"].get("FORBIDDEN_DOMAINS"):
+        Config.FORBIDDEN_DOMAINS = y["ARL"]["FORBIDDEN_DOMAINS"]
+
     if y.get("DINGDING"):
         if y["DINGDING"].get("SECRET"):
             Config.DINGDING_SECRET = y["DINGDING"]["SECRET"]
@@ -128,6 +134,8 @@ try:
 
         if y["EMAIL"].get("TO"):
             Config.EMAIL_TO = y["EMAIL"]["TO"]
+
+
 
 except Exception as e:
     print("Parse config.yaml error {}".format(e))

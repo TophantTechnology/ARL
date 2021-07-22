@@ -20,7 +20,9 @@ base_search_fields = {
     "task_id": fields.String(description="任务ID"),
     "update_date__dgt": fields.String(description="更新时间大于"),
     "update_date__dlt": fields.String(description="更新时间小于"),
-    "scope_id": fields.String(description="资产范围ID")
+    "scope_id": fields.String(description="资产范围ID"),
+    "ip_type": fields.String(description="IP类型，公网(PUBLIC)和内网(PRIVATE)"),
+    "cdn_name": fields.String(description="CDN 厂商名称")
 }
 
 base_search_fields.update(base_query_fields)

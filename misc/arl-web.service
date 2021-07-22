@@ -1,0 +1,14 @@
+[Unit]
+Description=ARL WEB Service
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/opt/ARL
+ExecStart=/usr/local/bin/gunicorn -b 127.0.0.1:5013 app.main:arl_app -w 3 --access-logfile arl_web.log
+ExecReload=/bin/kill -s HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+

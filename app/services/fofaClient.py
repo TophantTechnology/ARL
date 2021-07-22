@@ -7,13 +7,23 @@ logger = get_task_logger(__name__)
 
 
 class FofaClient:
-    def __init__(self, email, key, page_size = 9999):
+    def __init__(self, email, key, page_size=9999):
         self.email = email
         self.key = key
         self.base_url = "https://fofa.so"
         self.search_api_url = "/api/v1/search/all"
-        self.page_size = page_size #终身用户
+        self.info_my_api_url = "/api/v1/info/my"
+        self.page_size = page_size  # 终身用户
         self.param = {}
+
+    def info_my(self):
+        param = {
+            "email": self.email,
+            "key": self.key,
+        }
+        self.param = param
+        data = self._api(self.base_url + self.info_my_api_url)
+        return data
 
     def fofa_search_all(self, query):
         qbase64 = base64.b64encode(query.encode())
@@ -25,13 +35,12 @@ class FofaClient:
         }
 
         self.param = param
-        data =  self._api(self.base_url + self.search_api_url)
+        data = self._api(self.base_url + self.search_api_url)
         return data
 
     def _api(self, url):
-        data =  utils.http_req(url, 'get', params = self.param).json()
+        data = utils.http_req(url, 'get', params=self.param).json()
         return data
-
 
     def search_cert(self, cert):
         query = 'cert="{}"'.format(cert)
@@ -43,11 +52,9 @@ class FofaClient:
         return results
 
 
-
-
 def fetch_ip_bycert(cert, size=9999):
     ip_set = set()
-
+    logger.info("fetch_ip_bycert {}".format(cert))
     try:
         client = FofaClient(Config.FOFA_EMAIL, Config.FOFA_KEY, page_size=size)
         items = client.search_cert(cert)
@@ -58,3 +65,38 @@ def fetch_ip_bycert(cert, size=9999):
 
     return list(ip_set)
 
+
+def fofa_query(query, page_size=9999):
+    try:
+        if not Config.FOFA_KEY or not Config.FOFA_KEY:
+            return "please set fofa key in config-docker.yaml"
+
+        client = FofaClient(Config.FOFA_EMAIL, Config.FOFA_KEY, page_size=page_size)
+        data = client.fofa_search_all(query)
+        if 'error' not in data:
+            return "fofa api endpoint change"
+
+        return data
+    except Exception as e:
+        error_msg = str(e)
+        error_msg = error_msg.replace(Config.FOFA_KEY[10:], "***")
+        return error_msg
+
+
+def fofa_query_result(query, page_size=9999):
+    try:
+        ip_set = set()
+        data = fofa_query(query, page_size)
+
+        if isinstance(data, dict):
+            if data['error']:
+                return data['errmsg']
+
+            for item in data["results"]:
+                ip_set.add(item[1])
+            return list(ip_set)
+
+        raise Exception(data)
+    except Exception as e:
+        error_msg = str(e)
+        return error_msg

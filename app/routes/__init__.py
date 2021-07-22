@@ -14,6 +14,10 @@ base_query_fields = {
     'order': fields.String(description="排序字段", example='_id'),
 }
 
+# 只能用等号进行mongo查询的字段
+EQUAL_FIELDS = ["task_id", "task_tag", "ip_type", "scope_id"]
+
+
 class ARLResource(Resource):
     def get_parser(self, model, location='json'):
         parser = reqparse.RequestParser(bundle_errors=True)
@@ -66,10 +70,13 @@ class ARLResource(Resource):
                 query_args[real_key] = raw_value
 
             elif isinstance(args[key], str):
-                query_args[key] = {
-                    "$regex": re.escape(args[key]),
-                    '$options': "i"
-                }
+                if key in EQUAL_FIELDS:
+                    query_args[key] = args[key]
+                else:
+                    query_args[key] = {
+                        "$regex": re.escape(args[key]),
+                        '$options': "i"
+                    }
             else:
                 query_args[key] = args[key]
 
@@ -222,7 +229,7 @@ from .user import ns as user_ns
 from .image import ns as image_ns
 from .cert import ns as cert_ns
 from .service import ns as service_ns
-from .fileleak import ns as filleak_ns
+from .fileleak import ns as fileleak_ns
 from .export import ns as export_ns
 from .assetScope import ns as asset_scope_ns
 from .assetDomain import ns as asset_domain_ns
@@ -234,3 +241,7 @@ from .vuln import ns as vuln_ns
 from .batchExport import ns as batch_export_ns
 from .policy import ns as policy_ns
 from .npoc_service import ns as npoc_service_ns
+from .taskFofa import ns as task_fofa_ns
+from .console import ns as console_ns
+from .cip import ns as cip_ns
+from .fingerprint import ns as fingerprint_ns

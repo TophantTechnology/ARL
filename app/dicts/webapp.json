@@ -25915,6 +25915,7 @@
         "headers": [
             "BT_PANEL="
         ],
+        "html": [],
         "title": [],
         "icon": "default.png",
         "website": "https://www.riskivy.com/",
@@ -25927,6 +25928,7 @@
         "headers": [
             "mongo-express="
         ],
+        "html": [],
         "title": [
             "Mongo Express"
         ],

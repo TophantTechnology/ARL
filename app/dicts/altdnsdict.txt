@@ -1,8 +1,8 @@
 adm
 admin
+ai
 alpha
 api
-api-docs
 app
 auth
 backend
@@ -22,10 +22,12 @@ cvs
 data
 demo
 dev
+dev1
 developer
 devops
 devs
 docker
+edge
 elastic
 email
 engine
@@ -40,6 +42,7 @@ gateway
 gh
 git
 gitlab
+gray
 gw
 h5
 help
@@ -93,10 +96,12 @@ service
 signed
 sit
 skins
+sre
 ssl
 st
 staff
 stage
+stage1
 staging
 static
 stg
@@ -106,6 +111,9 @@ swagger
 system
 team
 test
+test1
+testing
+testing1
 tpe
 train
 trial
@@ -116,4 +124,5 @@ v
 v1
 v2
 vpn
+we
 wx

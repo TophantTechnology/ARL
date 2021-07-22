@@ -267,6 +267,8 @@ bbs
 bbs.tar
 bbs.tar.gz
 beans
+bin.rar
+bin.zip
 bin/config.sh
 bootstrap.properties
 bootstrap.yml

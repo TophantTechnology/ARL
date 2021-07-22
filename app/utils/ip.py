@@ -12,6 +12,18 @@ def is_vaild_ip_target(ip):
         return False
 
 
+def transfer_ip_scope(target):
+    """
+    将目标IP,IP段转换为合法的CIDR表示方法
+    """
+    from . import get_logger
+    logger = get_logger()
+
+    try:
+        return IP(target, make_net=True).strNormal(1)
+    except Exception as e:
+        logger.warn("error on ip_scope {} {}".format(target, e))
+
 
 #判断是否在黑名单IP内，有点不严谨
 def not_in_black_ips(target):
@@ -48,6 +60,7 @@ def get_ip_asn(ip):
 
     return item
 
+
 def get_ip_city(ip):
     from . import get_logger
     logger = get_logger()
@@ -69,7 +82,6 @@ def get_ip_city(ip):
     except Exception as e:
         logger.warning("{} {}".format(e,ip))
         return {}
-
 
 
 def get_ip_type(ip):

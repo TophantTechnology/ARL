@@ -22,7 +22,8 @@ base_search_fields = {
     'task_id': fields.String(description="任务 ID"),
     'scope_id': fields.String(description="范围 ID"),
     "update_date__dgt": fields.String(description="更新时间大于"),
-    "update_date__dlt": fields.String(description="更新时间小于")
+    "update_date__dlt": fields.String(description="更新时间小于"),
+    'tag': fields.String(description="标签列表")
 }
 
 site_search_fields = base_search_fields.copy()
@@ -115,20 +116,20 @@ def add_site_to_scope(site, scope_id):
         utils.conn_db('asset_site').insert_one(item)
 
 
-delete_site_fields = ns.model('deleteAssetSite',  {
-    '_id': fields.List(fields.String(required=True, description="数据_id"))
+delete_asset_site_fields = ns.model('deleteAssetSite',  {
+    '_id': fields.List(fields.String(required=True, description="站点 _id"))
 })
 
 
 @ns.route('/delete/')
 class DeleteARLAssetSite(ARLResource):
     @auth
-    @ns.expect(delete_site_fields)
+    @ns.expect(delete_asset_site_fields)
     def post(self):
         """
         删除资产组中的站点
         """
-        args = self.parse_args(delete_site_fields)
+        args = self.parse_args(delete_asset_site_fields)
         id_list = args.pop('_id', "")
         for _id in id_list:
             query = {'_id': ObjectId(_id)}
@@ -170,3 +171,90 @@ class ARLSaveResultSet(ARLResource):
         }
 
         return utils.build_ret(ErrorMsg.Success, ret_data)
+
+
+add_asset_site_tag_fields = ns.model('AddAssetSiteTagFields',  {
+    "tag": fields.String(required=True, description="添加站点标签"),
+    "_id": fields.String(description="资产站点ID", required=True)
+})
+
+
+@ns.route('/add_tag/')
+class AddAssetSiteTagARL(ARLResource):
+
+    @auth
+    @ns.expect(add_asset_site_tag_fields)
+    def post(self):
+        """
+        资产站点添加Tag
+        """
+        args = self.parse_args(add_asset_site_tag_fields)
+        site_id = args.pop("_id")
+        tag = args.pop("tag")
+
+        query = {"_id": ObjectId(site_id)}
+        data = utils.conn_db('asset_site').find_one(query)
+        if not data:
+            return utils.build_ret(ErrorMsg.SiteIdNotFound, {"site_id": site_id})
+
+        tag_list = []
+        old_tag = data.get("tag")
+        if old_tag:
+            if isinstance(old_tag, str):
+                tag_list.append(old_tag)
+
+            if isinstance(old_tag, list):
+                tag_list.extend(old_tag)
+
+        if tag in tag_list:
+            return utils.build_ret(ErrorMsg.SiteTagIsExist, {"tag": tag})
+
+        tag_list.append(tag)
+
+        utils.conn_db('asset_site').update_one(query, {"$set": {"tag": tag_list}})
+
+        return utils.build_ret(ErrorMsg.Success, {"tag": tag})
+
+
+delete_asset_site_tag_fields = ns.model('delete_asset_site_tag_fields',  {
+    "tag": fields.String(required=True, description="删除资产站点标签"),
+    "_id": fields.String(description="资产站点ID", required=True)
+})
+
+
+@ns.route('/delete_tag/')
+class DeleteAssetSiteTagARL(ARLResource):
+
+    @auth
+    @ns.expect(delete_asset_site_tag_fields)
+    def post(self):
+        """
+        删除资产站点Tag
+        """
+        args = self.parse_args(delete_asset_site_tag_fields)
+        site_id = args.pop("_id")
+        tag = args.pop("tag")
+
+        query = {"_id": ObjectId(site_id)}
+        data = utils.conn_db('asset_site').find_one(query)
+        if not data:
+            return utils.build_ret(ErrorMsg.SiteIdNotFound, {"site_id": site_id})
+
+        tag_list = []
+        old_tag = data.get("tag")
+        if old_tag:
+            if isinstance(old_tag, str):
+                tag_list.append(old_tag)
+
+            if isinstance(old_tag, list):
+                tag_list.extend(old_tag)
+
+        if tag not in tag_list:
+            return utils.build_ret(ErrorMsg.SiteTagNotExist, {"tag": tag})
+
+        tag_list.remove(tag)
+
+        utils.conn_db('asset_site').update_one(query, {"$set": {"tag": tag_list}})
+
+        return utils.build_ret(ErrorMsg.Success, {"tag": tag})
+

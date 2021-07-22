@@ -12,8 +12,9 @@ celery = Celery('task', broker=Config.CELERY_BROKER_URL)
 
 
 class CeleryConfig:
-    CELERY_ACKS_LATE=False
-    CELERYD_PREFETCH_MULTIPLIER=1
+    CELERY_ACKS_LATE = False
+    CELERYD_PREFETCH_MULTIPLIER = 1
+    BROKER_TRANSPORT_OPTIONS = {"max_retries": 3, "interval_start": 0, "interval_step": 0.2, "interval_max": 0.5}
 
 
 celery.config_from_object(CeleryConfig)
@@ -29,10 +30,12 @@ def arl_task(options):
     action_map = {
         CeleryAction.DOMAIN_TASK_SYNC_TASK: domain_task_sync,
         CeleryAction.DOMAIN_EXEC_TASK: domain_exec,
+        CeleryAction.IP_EXEC_TASK: ip_exec,
         CeleryAction.DOMAIN_TASK: domain_task,
         CeleryAction.IP_TASK: ip_task,
         CeleryAction.ADD_DOMAIN_TO_SCOPE: add_domain_to_scope,
-        CeleryAction.RUN_RISK_CRUISING: run_risk_cruising
+        CeleryAction.RUN_RISK_CRUISING: run_risk_cruising,
+        CeleryAction.FOFA_TASK: fofa_task
     }
     logger.info(options)
     start_time = time.time()
@@ -107,3 +110,24 @@ def add_domain_to_scope(options):
 def run_risk_cruising(options):
     task_id = options["task_id"]
     wrap_tasks.run_risk_cruising(task_id)
+
+
+def fofa_task(options):
+    task_id = options["task_id"]
+    task_options = options["options"]
+    target = " ".join(options["fofa_ip"])
+    wrap_tasks.ip_task(target, task_id, task_options)
+
+
+def ip_exec(options):
+    """
+    IP 监测任务
+    """
+    scope_id = options.get("scope_id")
+    target = options.get("domain")
+    job_id = options.get("job_id")
+    monitor_options = options.get("monitor_options")
+    name = options.get("name")
+    wrap_tasks.ip_executor(target=target, scope_id=scope_id,
+                           task_name=name, job_id=job_id,
+                           options=monitor_options)

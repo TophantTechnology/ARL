@@ -16,7 +16,7 @@ from .fofaClient import fetch_ip_bycert
 from .fetchCert import fetch_cert
 from .fileLeak import file_leak
 from .pageFetch import page_fetch
-from .webAppIdentify import web_app_identify
 from .syncAsset import sync_asset
 from .npoc import run_risk_cruising, run_sniffer
 from .crtshClient import crtsh_search
+from .autoTag import auto_tag

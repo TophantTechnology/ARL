@@ -93,7 +93,7 @@ def get_cert(host, port):
         certs = ssl.get_server_certificate((host, port))
         return parse_certs(certs)
     except Exception as e:
-        logger.warning("get cert error {}:{} {}".format(host,port, e))
+        logger.debug("get cert error {}:{} {}".format(host,port, e))
 
 
 

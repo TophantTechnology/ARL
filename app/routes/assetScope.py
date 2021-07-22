@@ -5,7 +5,7 @@ from app.utils import get_logger, auth
 from app import utils
 from . import base_query_fields, ARLResource, get_arl_parser
 from app.utils import conn_db as conn
-from app.modules import ErrorMsg
+from app.modules import ErrorMsg, AssetScopeType
 
 ns = Namespace('asset_scope', description="资产组范围")
 
@@ -14,7 +14,8 @@ logger = get_logger()
 base_fields = {
     'name': fields.String(description="资产组名称"),
     'scope': fields.String(description="资产范围"),
-    "black_scope": fields.String(description="资产黑名单")
+    "black_scope": fields.String(description="资产黑名单"),
+    "scope_type": fields.String(description="资产范围类别")
 }
 
 add_asset_scope_fields = ns.model('addAssetScope', base_fields)
@@ -51,6 +52,10 @@ class ARLAssetScope(ARLResource):
         name = args.pop('name')
         scope = args.pop('scope')
         black_scope = args.pop('black_scope')
+        scope_type = args.pop('scope_type')
+
+        if scope_type not in [AssetScopeType.IP, AssetScopeType.DOMAIN]:
+            scope_type = AssetScopeType.DOMAIN
 
         black_scope_array = []
         if black_scope:
@@ -59,17 +64,29 @@ class ARLAssetScope(ARLResource):
         scope_array = re.split(r",|\s", scope)
         # 清除空白符
         scope_array = list(filter(None, scope_array))
+        new_scope_array = []
         for x in scope_array:
-            if not utils.is_valid_domain(x):
-                return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": x})
+            if scope_type == AssetScopeType.DOMAIN:
+                if not utils.is_valid_domain(x):
+                    return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": x})
 
-        if not scope_array:
+                new_scope_array.append(x)
+
+            if scope_type == AssetScopeType.IP:
+                transfer = utils.ip.transfer_ip_scope(x)
+                if transfer is None:
+                    return utils.build_ret(ErrorMsg.ScopeTypeIsNotIP, {"scope": x})
+
+                new_scope_array.append(transfer)
+
+        if not new_scope_array:
             return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": ""})
 
         scope_data = {
             "name": name,
-            "scope": scope,
-            "scope_array": scope_array,
+            "scope_type": scope_type,
+            "scope": ",".join(new_scope_array),
+            "scope_array": new_scope_array,
             "black_scope": black_scope,
             "black_scope_array": black_scope_array,
         }
@@ -77,9 +94,8 @@ class ARLAssetScope(ARLResource):
 
         scope_id = str(scope_data.pop("_id"))
         scope_data["scope_id"] = scope_id
-        data = {"message": "success", "data": scope_data, "code": 200}
 
-        return data
+        return utils.build_ret(ErrorMsg.Success, scope_data)
 
 
 delete_task_get_fields = ns.model('DeleteScopeByID',  {
@@ -131,6 +147,9 @@ class DeleteARLAssetScope(ARLResource):
     @auth
     @ns.expect(delete_task_post_fields)
     def post(self):
+        """
+        删除资产组和资产组中的资产
+        """
         args = self.parse_args(delete_task_post_fields)
         scope_id_list = args.pop('scope_id')
         for scope_id in scope_id_list:
@@ -165,12 +184,6 @@ class AddARLAssetScope(ARLResource):
         args = self.parse_args(add_scope_fields)
         scope = str(args.pop('scope', "")).lower()
 
-        scope_array = re.split(r",|\s", scope)
-        # 清除空白符
-        scope_array = list(filter(None, scope_array))
-        if not scope_array:
-            return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": ""})
-
         scope_id = args.pop('scope_id', "")
 
         table = 'asset_scope'
@@ -179,15 +192,32 @@ class AddARLAssetScope(ARLResource):
         if not scope_data:
             return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id, "scope": scope})
 
-        logger.info(scope_array)
-        for x in scope_array:
-            if not utils.is_valid_domain(x):
-                return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": x})
+        scope_type = scope_data.get("scope_type")
+        if scope_type not in [AssetScopeType.IP, AssetScopeType.DOMAIN]:
+            scope_type = AssetScopeType.DOMAIN
 
-            if x in scope_data.get("scope_array", []):
+        scope_array = re.split(r",|\s", scope)
+        # 清除空白符
+        scope_array = list(filter(None, scope_array))
+        if not scope_array:
+            return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": ""})
+
+        for x in scope_array:
+            new_scope = x
+            if scope_type == AssetScopeType.DOMAIN:
+                if not utils.is_valid_domain(x):
+                    return utils.build_ret(ErrorMsg.DomainInvalid, {"scope": x})
+
+            if scope_type == AssetScopeType.IP:
+                transfer = utils.ip.transfer_ip_scope(x)
+                if transfer is None:
+                    return utils.build_ret(ErrorMsg.ScopeTypeIsNotIP, {"scope": x})
+                new_scope = transfer
+
+            if new_scope in scope_data.get("scope_array", []):
                 return utils.build_ret(ErrorMsg.ExistScope, {"scope_id": scope_id, "scope": x})
 
-            scope_data["scope_array"].append(x)
+            scope_data["scope_array"].append(new_scope)
 
         scope_data["scope"] = ",".join(scope_data["scope_array"])
         utils.conn_db(table).find_one_and_replace(query, scope_data)

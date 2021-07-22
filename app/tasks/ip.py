@@ -1,11 +1,14 @@
 from bson.objectid import  ObjectId
 import time
-from app import  services
+from app import services
 from app.modules import ScanPortType, TaskStatus, CollectSource
 from app.services import fetchCert, run_risk_cruising, run_sniffer
-from app import  utils
-logger = utils.get_logger()
+from app import utils
+from app.services.commonTask import CommonTask
 from app.config import Config
+
+
+logger = utils.get_logger()
 
 
 def ssl_cert(ip_info_list):
@@ -24,8 +27,11 @@ def ssl_cert(ip_info_list):
 
     return {}
 
-class IPTask():
-    def __init__(self, ip_target = None, task_id = None, options = None):
+
+class IPTask(CommonTask):
+    def __init__(self, ip_target=None, task_id=None, options=None):
+        super().__init__(task_id=task_id)
+
         self.ip_target = ip_target
         self.task_id = task_id
         self.options = options
@@ -37,6 +43,31 @@ class IPTask():
         self.cert_map = {}
         self.service_info_list = []
         self.npoc_service_target_set = set()
+        # 用来区分是正常任务还是监控任务
+        self.task_tag = "task"
+
+        self.scope_id = None
+        self.task_name = None
+        self.asset_ip_port_set = set()
+        self.asset_ip_info_map = dict()
+
+    def set_asset_ip(self):
+        """
+        用来获取Asset_IP 中的信息，仅仅在监控阶段使用
+        """
+        raise NotImplementedError()
+
+    def async_ip_info(self):
+        """
+        用来同步发现的 ip 中的信息，仅仅在监控阶段使用
+        """
+        raise NotImplementedError()
+
+    def async_site_info(self, site_info_list):
+        """
+        用来同步发现的 site 中的信息，仅仅在监控阶段使用
+        """
+        raise NotImplementedError()
 
     def port_scan(self):
         scan_port_map = {
@@ -55,25 +86,31 @@ class IPTask():
         ip_port_result = services.port_scan(targets, **scan_port_option)
         self.ip_info_list.extend(ip_port_result)
 
+        if self.task_tag == 'monitor':
+            self.set_asset_ip()
+
         for ip_info in ip_port_result:
-            self.ip_set.add(ip_info["ip"])
-            if not utils.not_in_black_ips(ip_info["ip"]):
+            curr_ip = ip_info["ip"]
+            self.ip_set.add(curr_ip)
+            if not utils.not_in_black_ips(curr_ip):
                 continue
 
             ip_info["task_id"] = self.task_id
-            ip_info["ip_type"] = utils.get_ip_type(ip_info["ip"])
+            ip_info["ip_type"] = utils.get_ip_type(curr_ip)
             ip_info["geo_asn"] = {}
             ip_info["geo_city"] = {}
 
             if ip_info["ip_type"] == "PUBLIC":
-                ip_info["geo_asn"] = utils.get_ip_asn(ip_info["ip"])
-                ip_info["geo_city"] = utils.get_ip_city(ip_info["ip"])
+                ip_info["geo_asn"] = utils.get_ip_asn(curr_ip)
+                ip_info["geo_city"] = utils.get_ip_city(curr_ip)
 
+            # 仅仅资产发现任务将IP全部存储起来
+            if self.task_tag == 'task':
+                utils.conn_db('ip').insert_one(ip_info)
 
-            utils.conn_db('ip').insert_one(ip_info)
-
-
-
+        # 监控任务同步IP信息
+        if self.task_tag == 'monitor':
+            self.async_ip_info()
 
     def find_site(self):
         url_temp_list = []
@@ -113,6 +150,7 @@ class IPTask():
 
     def fetch_site(self):
         site_info_list = services.fetch_site(self.site_list)
+
         for site_info in site_info_list:
             curr_site = site_info["site"]
             if curr_site not in self.site_list:
@@ -122,23 +160,22 @@ class IPTask():
             site_info["task_id"] = self.task_id
             site_info["screenshot"] = file_name
 
-            finger_list = self.web_analyze_map.get(curr_site, [])
-            site_info["finger"] = finger_list
+            # 调用读取站点识别的结果，并且去重
+            if self.web_analyze_map:
+                finger_list = self.web_analyze_map.get(curr_site, [])
+                known_finger_set = set()
+                for finger_item in site_info["finger"]:
+                    known_finger_set.add(finger_item["name"].lower())
 
-            if self.options.get("site_identify"):
-                web_app_finger = services.web_app_identify(site_info)
-                flag = False
-                if web_app_finger and finger_list:
-                    for finger in finger_list:
-                        if finger["name"].lower() == web_app_finger["name"].lower():
-                            flag = True
-                            break
-
-                if not flag and web_app_finger:
-                    finger_list.append(web_app_finger)
+                for analyze_finger in finger_list:
+                    analyze_name = analyze_finger["name"].lower()
+                    if analyze_name not in known_finger_set:
+                        site_info["finger"].append(analyze_finger)
 
             utils.conn_db('site').insert_one(site_info)
 
+        if self.task_tag == 'monitor':
+            self.async_site_info(site_info_list)
 
     def site_screenshot(self):
         '''***站点截图***'''
@@ -386,9 +423,10 @@ class IPTask():
             elapse = time.time() - t1
             self.update_services("file_leak", elapse)
 
+        self.insert_task_stat()
+
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())
-
 
 
 def ip_task(ip_target, task_id, options):
