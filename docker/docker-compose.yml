@@ -71,7 +71,7 @@ services:
 
 
     rabbitmq:
-      image: rabbitmq:3-management-alpine
+      image: rabbitmq:3.8.19-rc.1-management-alpine
       container_name: arl_rabbitmq
       restart: always
       environment:
