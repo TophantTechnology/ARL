@@ -4,6 +4,15 @@ echo "cd /opt/"
 mkdir -p /opt/
 cd /opt/
 
+tee /etc/yum.repos.d/mongodb-org-4.0.repo <<"EOF"
+[mongodb-org-4.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/4.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-4.0.asc
+EOF
+
 echo "install dependencies ..."
 yum install epel-release -y
 yum install python36 mongodb-org-server mongodb-org-shell rabbitmq-server python36-devel gcc-c++ git \
@@ -47,7 +56,7 @@ cd ../
 
 if [ ! -f /usr/local/bin/ncrack ]; then
   echo "Download ncrack ..."
-  wget https://gitee.com/ic3z/arl_files/raw/master/ncrack -O
+  wget https://gitee.com/ic3z/arl_files/raw/master/ncrack -O /usr/local/bin/ncrack
   chmod +x /usr/local/bin/ncrack
 fi
 
@@ -60,12 +69,12 @@ fi
 mkdir -p /data/GeoLite2
 if [ ! -f /data/GeoLite2/GeoLite2-ASN.mmdb ]; then
   echo "download GeoLite2-ASN.mmdb ..."
-  wget https://github.com/1c3z/arl_files/raw/master/GeoLite2-ASN.mmdb -O /data/GeoLite2/GeoLite2-ASN.mmdb
-fi/usr/local/bin/ncrack
+  wget https://gitee.com/ic3z/arl_files/raw/master/GeoLite2-ASN.mmdb -O /data/GeoLite2/GeoLite2-ASN.mmdb
+fi
 
 if [ ! -f /data/GeoLite2/GeoLite2-City.mmdb ]; then
   echo "download GeoLite2-City.mmdb ..."
-  wget https://github.com/1c3z/arl_files/raw/master/GeoLite2-City.mmdb -O /data/GeoLite2/GeoLite2-City.mmdb
+  wget https://gitee.com/ic3z/arl_files/raw/master/GeoLite2-City.mmdb -O /data/GeoLite2/GeoLite2-City.mmdb
 fi
 
 cd ARL
