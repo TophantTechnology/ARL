@@ -35,6 +35,9 @@ class BaiduSearch():
         urls = set()
         for u in urls_result:
             try:
+                if not re.match(r'^https?:/{2}\w.+$', u):
+                    logger.info("url {} is invalid".format(u))
+                    continue
                 resp = utils.http_req(u, "head")
                 real_url = resp.headers.get('Location')
                 if real_url:
@@ -50,6 +53,7 @@ class BaiduSearch():
         for page in range(1, min(int(self.search_result_num / 10) + 2, self.page_num + 1)):
             if page == 1:
                 _urls = self.match_urls(self.first_html)
+                urls.extend(_urls)
                 logger.info("baidu firsturl result {}".format(len(_urls)))
             else:
                 time.sleep(self.default_interval)
