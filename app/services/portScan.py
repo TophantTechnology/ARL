@@ -6,13 +6,17 @@ logger = utils.get_logger()
 
 
 class PortScan:
-    def __init__(self, targets, ports=None, service_detect = False, os_detect = False):
+    def __init__(self, targets, ports=None, service_detect=False, os_detect=False,
+                 port_parallelism=None, port_min_rate=None, custom_host_timeout=None):
         self.targets = " ".join(targets)
         self.ports = ports
-        self.alive_port = "22,80,443,3389,8007-8011,8443,9090,8080-8091,8093,8099,5000-5004,2222,3306,1433,21,25"
+        self.alive_port = "22,80,443,843,3389,8007-8011,8443,9090,8080-8091,8093,8099,5000-5004,2222,3306,1433,21,25"
         self.nmap_arguments = "-sS -n --open --defeat-rst-ratelimit"
         self.max_retries = 3
         self.host_timeout = 60*5
+        self.parallelism = port_parallelism  # 默认 32
+        self.min_rate = port_min_rate  # 默认64
+
         if service_detect:
             self.host_timeout += 60 * 5
             self.nmap_arguments += " -sV"
@@ -34,10 +38,15 @@ class PortScan:
             self.max_retries = 2
 
         self.nmap_arguments += " --max-rtt-timeout 320ms  --initial-rtt-timeout 100ms"
-        self.nmap_arguments += " --min-rate 64"
+        self.nmap_arguments += " --min-rate {}".format(self.min_rate)
         self.nmap_arguments += " --script-timeout 6s"
+
+        # 依据传过来的超时为准
+        if custom_host_timeout is not None:
+            if int(custom_host_timeout) > 0:
+                self.host_timeout = custom_host_timeout
         self.nmap_arguments += " --host-timeout {}s".format(self.host_timeout)
-        self.nmap_arguments += " --min-parallelism 32"
+        self.nmap_arguments += " --min-parallelism {}".format(self.parallelism)
         self.nmap_arguments += " --max-retries {}".format(self.max_retries)
 
     def run(self):
@@ -82,8 +91,11 @@ class PortScan:
         return {}
 
 
-def port_scan(targets, ports=Config.TOP_10, service_detect=False, os_detect=False):
+def port_scan(targets, ports=Config.TOP_10, service_detect=False, os_detect=False,
+              port_parallelism=32, port_min_rate=64, custom_host_timeout=None):
     targets = list(set(targets))
     targets = list(filter(utils.not_in_black_ips, targets))
-    ps = PortScan(targets, ports, service_detect, os_detect)
+    ps = PortScan(targets=targets, ports=ports, service_detect=service_detect, os_detect=os_detect,
+                  port_parallelism=port_parallelism, port_min_rate=port_min_rate,
+                  custom_host_timeout=custom_host_timeout)
     return ps.run()

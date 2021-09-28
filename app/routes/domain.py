@@ -1,5 +1,8 @@
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
+from app import utils
+from app.modules import ErrorMsg
 from . import base_query_fields, ARLResource, get_arl_parser
 
 ns = Namespace('domain', description="域名信息")
@@ -48,3 +51,25 @@ class ARLDomainExport(ARLResource):
         response = self.send_export_file(args=args, _type="domain")
 
         return response
+
+
+delete_domain_fields = ns.model('deleteDomainFields',  {
+    '_id': fields.List(fields.String(required=True, description="域名 _id"))
+})
+
+
+@ns.route('/delete/')
+class DeleteARLDomain(ARLResource):
+    @auth
+    @ns.expect(delete_domain_fields)
+    def post(self):
+        """
+        删除 域名
+        """
+        args = self.parse_args(delete_domain_fields)
+        id_list = args.pop('_id', [])
+        for _id in id_list:
+            query = {'_id': ObjectId(_id)}
+            utils.conn_db('domain').delete_one(query)
+
+        return utils.build_ret(ErrorMsg.Success, {'_id': id_list})

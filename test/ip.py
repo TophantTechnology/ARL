@@ -13,7 +13,12 @@ task_data = {
     'options': {
         'domain_brute': True,
         'domain_brute_type': 'test',
-        'port_scan_type': 'test',
+        'port_scan_type': 'custom',
+        'port_custom': '80,443',
+        'host_timeout_type': 'custom',
+        'host_timeout': 130,
+        'port_parallelism': 12,
+        'port_min_rate': 13,
         'port_scan': True,
         'service_detection': False,
         'service_brute': False,
@@ -46,6 +51,7 @@ def submit_task(task_data):
     celerytask.arl_task(options=task_options)
 
     return task_data
+
 
 class TestExecTask(unittest.TestCase):
     def test_exec_task(self):

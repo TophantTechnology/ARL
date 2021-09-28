@@ -74,14 +74,22 @@ class IPTask(CommonTask):
             "test": ScanPortType.TEST,
             "top100": ScanPortType.TOP100,
             "top1000": ScanPortType.TOP1000,
-            "all": ScanPortType.ALL
+            "all": ScanPortType.ALL,
+            "custom": self.options.get("port_custom", "80,443")
         }
         option_scan_port_type = self.options.get("port_scan_type", "test")
         scan_port_option = {
             "ports": scan_port_map.get(option_scan_port_type, ScanPortType.TEST),
             "service_detect": self.options.get("service_detection", False),
-            "os_detect": self.options.get("os_detection", False)
+            "os_detect": self.options.get("os_detection", False),
+            "port_parallelism": self.options.get("port_parallelism", 32),  # 探测报文并行度
+            "port_min_rate": self.options.get("port_min_rate", 64),  # 最少发包速率
+            "custom_host_timeout": None  # 主机超时时间(s)
         }
+        # 只有当设置为自定义时才会去设置超时时间
+        if self.options.get("host_timeout_type") == "custom":
+            scan_port_option["custom_host_timeout"] = self.options.get("host_timeout", 60 * 15)
+
         targets = self.ip_target.split()
         ip_port_result = services.port_scan(targets, **scan_port_option)
         self.ip_info_list.extend(ip_port_result)
@@ -276,10 +284,10 @@ class IPTask(CommonTask):
         targets = []
         for ip_info in self.ip_info_list:
             for port_info in ip_info["port_info"]:
-                if port_info["port_id"] == 80:
+                skip_port_list = [80, 443, 843]
+                if port_info["port_id"] in skip_port_list:
                     continue
-                if port_info["port_id"] == 443:
-                    continue
+
                 targets.append("{}:{}".format(ip_info["ip"], port_info["port_id"]))
 
         result = run_sniffer(targets)
@@ -288,7 +296,6 @@ class IPTask(CommonTask):
             item["task_id"] = self.task_id
             item["save_date"] = utils.curr_date()
             utils.conn_db('npoc_service').insert_one(item)
-
 
     def site_spider(self):
         entry_urls_list = []
@@ -424,6 +431,8 @@ class IPTask(CommonTask):
             self.update_services("file_leak", elapse)
 
         self.insert_task_stat()
+
+        self.insert_finger_stat()
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())

@@ -5,6 +5,7 @@ from app import utils
 from app import celerytask
 import time
 from app.modules import CeleryAction, SchedulerStatus, AssetScopeType
+from app.helpers import task_schedule, asset_site_monitor
 
 logger = utils.get_logger()
 
@@ -12,28 +13,39 @@ domain_monitor_options = {
     'domain_brute': True,
     'domain_brute_type': 'big',
     'riskiq_search': True,
-    'alt_dns': True,
+    'alt_dns': False,
     'arl_search': True,
     'port_scan_type': 'test',
     'port_scan': True,
-    'site_identify': True
+    'crtsh_search': True,
+    'site_identify': False
 }
-
 
 ip_monitor_options = {
     'port_scan_type': 'test',
     'port_scan': True,
-    'site_identify': True
+    'site_identify': False
 }
 
 
-def add_job(domain, scope_id, options=None, interval=60*1, name="", scope_type=AssetScopeType.DOMAIN):
+def add_job(domain, scope_id, options=None, interval=60 * 1, name="", scope_type=AssetScopeType.DOMAIN):
     logger.info("add {} job {} {} {}".format(scope_type, interval, domain, scope_id))
     if options is None:
         if scope_type == AssetScopeType.DOMAIN:
             options = domain_monitor_options
         if scope_type == AssetScopeType.IP:
             options = ip_monitor_options
+
+    # 对IP任务域名监测选项设置为False
+    disable_options = {
+        "domain_brute": False,
+        "alt_dns": False,
+        "riskiq_search": False,
+        "arl_search": False
+    }
+
+    if scope_type == AssetScopeType.IP:
+        options.update(disable_options)
 
     current_time = int(time.time()) + 30
     item = {
@@ -50,6 +62,28 @@ def add_job(domain, scope_id, options=None, interval=60*1, name="", scope_type=A
         "name": name,
         "scope_type": scope_type
 
+    }
+    conn('scheduler').insert(item)
+
+    return str(item["_id"])
+
+
+def add_asset_site_monitor_job(scope_id, name, interval=60 * 1):
+    current_time = int(time.time()) + 30
+
+    item = {
+        "domain": "资产站点更新",
+        "scope_id": scope_id,
+        "interval": interval,
+        "next_run_time": current_time,
+        "next_run_date": utils.time2date(current_time),
+        "last_run_time": 0,
+        "last_run_date": "-",
+        "run_number": 0,
+        "status": SchedulerStatus.RUNNING,
+        "monitor_options": {},
+        "name": name,
+        "scope_type": "site_update_monitor"
     }
     conn('scheduler').insert(item)
 
@@ -147,11 +181,10 @@ def update_job_run(job_id):
     conn('scheduler').find_one_and_replace(query, item)
 
 
-def run_forever():
-    logger.info("start scheduler server ")
-    while True:
-        curr_time = int(time.time())
-        for item in all_job():
+def asset_monitor_scheduler():
+    curr_time = int(time.time())
+    for item in all_job():
+        try:
             if item.get("status") == SchedulerStatus.STOP:
                 continue
             if item["next_run_time"] <= curr_time:
@@ -164,16 +197,41 @@ def run_forever():
                 if not scope_type:
                     scope_type = AssetScopeType.DOMAIN
 
-                submit_job(domain=domain, job_id=str(item["_id"]),
-                           scope_id=scope_id, options=options, name=name, scope_type=scope_type)
+                if scope_type == "site_update_monitor":
+                    asset_site_monitor.submit_asset_site_monitor_job(scope_id=scope_id,
+                                                                     name=name,
+                                                                     scheduler_id=str(item["_id"]))
+
+                else:
+                    submit_job(domain=domain, job_id=str(item["_id"]),
+                               scope_id=scope_id, options=options,
+                               name=name, scope_type=scope_type)
+
                 item["next_run_time"] = curr_time + item["interval"]
                 item["next_run_date"] = utils.time2date(item["next_run_time"])
                 query = {"_id": item["_id"]}
                 conn('scheduler').find_one_and_replace(query, item)
 
-        logger.info(time.time())
-        time.sleep(30)
+        except Exception as e:
+            logger.exception(e)
 
+
+def run_forever():
+    from app.utils.github_task import github_task_scheduler
+    logger.info("start scheduler server ")
+    while True:
+        # 资产监控任务调度
+        asset_monitor_scheduler()
+
+        # Github 监控任务调度
+        github_task_scheduler()
+
+        # 计划任务调度
+        task_schedule.task_scheduler()
+
+        # logger.debug(time.time())
+        # sleep 时间不能超过60S，Github 里的任务可能运行不了。
+        time.sleep(58)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,11 @@
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from app.modules import ErrorMsg
 from . import base_query_fields, ARLResource, get_arl_parser
 from app import scheduler as app_scheduler, utils
-from app.modules import SchedulerStatus, AssetScopeType
+from app.modules import SchedulerStatus, AssetScopeType, TaskTag
+from app.helpers import get_options_by_policy_id
 
 ns = Namespace('scheduler', description="资产监控任务信息")
 
@@ -44,8 +46,8 @@ add_scheduler_fields = ns.model('addScheduler',  {
     "domain": fields.String(required=True, description="域名"),  # 多个域名可以用,隔开
     "interval": fields.Integer(description="间隔，单位是秒"),  # 单位是S
     "name": fields.String(description="监控任务名称"),  # 名称为空即自动生成
+    "policy_id": fields.String(description="策略ID")
 })
-
 
 
 @ns.route('/add/')
@@ -62,6 +64,7 @@ class AddARLScheduler(ARLResource):
         domain = args.pop("domain")
         interval = args.pop("interval")
         name = args.pop("name")
+        policy_id = args.pop("policy_id", "")
 
         if interval < 3600*6:
             return utils.build_ret(ErrorMsg.IntervalLessThan3600, {"interval": interval})
@@ -71,6 +74,12 @@ class AddARLScheduler(ARLResource):
 
         if not scope_data:
             return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id})
+
+        task_options = None
+        if policy_id and len(policy_id) == 24:
+            task_options = get_options_by_policy_id(policy_id, TaskTag.TASK)
+            if task_options is None:
+                return utils.build_ret(ErrorMsg.PolicyIDNotFound, {"policy_id": policy_id})
 
         # 资产范围类型（域名或者是IP）
         scope_type = scope_data.get("scope_type")
@@ -97,7 +106,7 @@ class AddARLScheduler(ARLResource):
                     curr_name = "监控-{}-{}".format(scope_data["name"], x)
 
                 job_id = app_scheduler.add_job(domain=x, scope_id=scope_id,
-                                               options=None, interval=interval,
+                                               options=task_options, interval=interval,
                                                name=curr_name, scope_type=scope_type)
                 ret_data.append({"domain": x, "scope_id": scope_id, "job_id": job_id})
 
@@ -109,7 +118,7 @@ class AddARLScheduler(ARLResource):
                 curr_name = "监控-{}-{}".format(scope_data["name"], ip_target)
 
             job_id = app_scheduler.add_job(domain=ip_target, scope_id=scope_id,
-                                           options=None, interval=interval,
+                                           options=task_options, interval=interval,
                                            name=curr_name, scope_type=scope_type)
             ret_data.append({"domain": ip_target, "scope_id": scope_id, "job_id": job_id})
 
@@ -204,3 +213,42 @@ class StopARLScheduler(ARLResource):
         app_scheduler.stop_job(job_id)
 
         return utils.build_ret(ErrorMsg.Success, {"job_id": job_id})
+
+
+add_scheduler_site_fields = ns.model('addSchedulerSite',  {
+    "scope_id": fields.String(required=True, description="资产范围 id"),
+    "interval": fields.Integer(description="间隔，单位是秒"),  # 单位是S
+    "name": fields.String(description="监控任务名称"),  # 名称为空即自动生成
+})
+
+
+@ns.route('/add/site_monitor/')
+class AddSiteScheduler(ARLResource):
+
+    @auth
+    @ns.expect(add_scheduler_site_fields)
+    def post(self):
+        """
+        添加站点更新监控周期任务
+        """
+        args = self.parse_args(add_scheduler_site_fields)
+        scope_id = args.pop("scope_id")
+        interval = args.pop("interval")
+        name = args.pop("name")
+
+        if interval < 3600*6:
+            return utils.build_ret(ErrorMsg.IntervalLessThan3600, {"interval": interval})
+
+        scope_data = utils.arl.scope_data_by_id(scope_id)
+
+        if not scope_data:
+            return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id})
+
+        if not name:
+            name = "站点监控-{}".format(scope_data["name"])
+
+        _id = app_scheduler.add_asset_site_monitor_job(scope_id=scope_id,
+                                                       name=name,
+                                                       interval=interval)
+
+        return utils.build_ret(ErrorMsg.Success, {"schedule_id": _id})

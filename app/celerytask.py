@@ -33,9 +33,11 @@ def arl_task(options):
         CeleryAction.IP_EXEC_TASK: ip_exec,
         CeleryAction.DOMAIN_TASK: domain_task,
         CeleryAction.IP_TASK: ip_task,
-        CeleryAction.ADD_DOMAIN_TO_SCOPE: add_domain_to_scope,
         CeleryAction.RUN_RISK_CRUISING: run_risk_cruising,
-        CeleryAction.FOFA_TASK: fofa_task
+        CeleryAction.FOFA_TASK: fofa_task,
+        CeleryAction.GITHUB_TASK_TASK: github_task_task,
+        CeleryAction.GITHUB_TASK_MONITOR: github_task_monitor,
+        CeleryAction.ASSET_SITE_UPDATE: asset_site_update
     }
     logger.info(options)
     start_time = time.time()
@@ -44,6 +46,8 @@ def arl_task(options):
         fun = action_map.get(action)
         if fun:
             fun(data)
+        else:
+            logger.warning("not found {} action".format(action))
     except Exception as e:
         logger.exception(e)
 
@@ -101,12 +105,6 @@ def ip_task(options):
     wrap_tasks.ip_task(target, task_id, task_options)
 
 
-def add_domain_to_scope(options):
-    domain = options["domain"]
-    scope_id = options["scope_id"]
-    wrap_tasks.add_domain_to_scope(domain=domain, scope_id=scope_id)
-
-
 def run_risk_cruising(options):
     task_id = options["task_id"]
     wrap_tasks.run_risk_cruising(task_id)
@@ -131,3 +129,26 @@ def ip_exec(options):
     wrap_tasks.ip_executor(target=target, scope_id=scope_id,
                            task_name=name, job_id=job_id,
                            options=monitor_options)
+
+
+def github_task_task(options):
+    task_id = options["task_id"]
+    keyword = options["keyword"]
+    wrap_tasks.github_task_task(task_id=task_id, keyword=keyword)
+
+
+def github_task_monitor(options):
+    task_id = options["task_id"]
+    keyword = options["keyword"]
+    scheduler_id = options["github_scheduler_id"]
+    wrap_tasks.github_task_monitor(task_id=task_id, keyword=keyword, scheduler_id=scheduler_id)
+
+
+def asset_site_update(options):
+    task_id = options["task_id"]
+    task_options = options["options"]
+    scope_id = task_options["scope_id"]
+    scheduler_id = task_options["scheduler_id"]
+    wrap_tasks.asset_site_update_task(task_id=task_id,
+                                      scope_id=scope_id, scheduler_id=scheduler_id)
+

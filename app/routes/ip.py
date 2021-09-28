@@ -1,5 +1,8 @@
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
+from app import utils
+from app.modules import ErrorMsg
 from . import base_query_fields, ARLResource, get_arl_parser
 
 ns = Namespace('ip', description="IP信息")
@@ -52,3 +55,25 @@ class ARLIPExport(ARLResource):
         response = self.send_export_file(args=args, _type="ip")
 
         return response
+
+
+delete_ip_fields = ns.model('deleteIpFields',  {
+    '_id': fields.List(fields.String(required=True, description="IP _id"))
+})
+
+
+@ns.route('/delete/')
+class DeleteARLIP(ARLResource):
+    @auth
+    @ns.expect(delete_ip_fields)
+    def post(self):
+        """
+        删除 IP
+        """
+        args = self.parse_args(delete_ip_fields)
+        id_list = args.pop('_id', [])
+        for _id in id_list:
+            query = {'_id': ObjectId(_id)}
+            utils.conn_db('ip').delete_one(query)
+
+        return utils.build_ret(ErrorMsg.Success, {'_id': id_list})

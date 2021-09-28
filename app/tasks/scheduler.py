@@ -114,7 +114,13 @@ class DomainExecutor(DomainTask):
         self.start_ip_fetch()
         self.start_site_fetch()
 
+        # cidr ip 结果统计，插入cip 集合中
+        self.insert_cip_stat()
+
+        # 任务结果统计
         self.insert_task_stat()
+        # 任务指纹信息统计
+        self.insert_finger_stat()
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())

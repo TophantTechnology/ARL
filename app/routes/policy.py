@@ -46,12 +46,16 @@ domain_config_fields = ns.model('domainConfig', {
 '''IP 相关配置选项'''
 ip_config_fields = ns.model('ipConfig', {
     "port_scan": fields.Boolean(description="端口扫描", default=True),
-    "port_scan_type": fields.String(description="端口扫描类型(test)", example="test"),
+    "port_scan_type": fields.String(description="端口扫描类型(test|top100|top1000|all|custom)", example="test"),
     "service_detection": fields.Boolean(description="服务识别", default=False),
     "os_detection": fields.Boolean(description="操作系统识别", default=False),
     "ssl_cert": fields.Boolean(description="SSL 证书获取", default=False),
-    "fofa_search": fields.Boolean(description="Fofa IP查询", default=False),
-    "skip_scan_cdn_ip": fields.Boolean(description="跳过 CDN IP扫描", default=True)
+    "skip_scan_cdn_ip": fields.Boolean(description="跳过 CDN IP扫描", default=True),  # 这个参数强制生效
+    "port_custom": fields.String(description="自定义扫描端口", default="80,443"),  # 仅端口扫描类型为 custom 时生效
+    "host_timeout_type": fields.String(description="主机超时时间类别（default|custom）", default="default"),
+    "host_timeout": fields.Integer(description="主机超时时间(s)", default=900),
+    "port_parallelism": fields.Integer(description="探测报文并行度", default=32),
+    "port_min_rate": fields.Integer(description="最少发包速率", default=60)
 })
 
 '''站点相关配置选项'''
@@ -61,6 +65,13 @@ site_config_fields = ns.model('siteConfig', {
     "search_engines": fields.Boolean(description="搜索引擎调用", default=False),
     "site_spider": fields.Boolean(description="站点爬虫", default=False),
 })
+
+
+'''资产组关联配置'''
+scope_config_fields = ns.model('scopeConfig', {
+    "scope_id": fields.String(description="资产分组 ID", default=""),
+})
+
 
 add_policy_fields = ns.model('addPolicy',  {
     "name": fields.String(required=True, description="策略名称"),
@@ -78,7 +89,8 @@ add_policy_fields = ns.model('addPolicy',  {
             "brute_config": fields.List(fields.Nested(ns.model('bruteConfig', {
                 "plugin_name": fields.String(description="poc 插件名称ID", default=False),
                 "enable": fields.Boolean(description="是否启用", default=True)
-            })))
+            }))),
+            "scope_config": fields.Nested(scope_config_fields)
         }, required=True)
     )
 })
@@ -99,6 +111,15 @@ class AddARLPolicy(ARLResource):
         domain_config = policy.pop("domain_config", {})
         domain_config = self._update_arg(domain_config, domain_config_fields)
         ip_config = policy.pop("ip_config", {})
+        port_scan_type = ip_config.get("port_scan_type", "test")
+        if port_scan_type == "custom":
+            port_custom = ip_config.get("port_custom", "80,443")
+            port_list = utils.arl.build_port_custom(port_custom)
+            if isinstance(port_list, str):
+                return utils.build_ret(ErrorMsg.PortCustomInvalid, {"port_custom": port_list})
+
+            ip_config["port_custom"] = ",".join(port_list)
+
         ip_config = self._update_arg(ip_config, ip_config_fields)
 
         site_config = policy.pop("site_config", {})
@@ -123,6 +144,10 @@ class AddARLPolicy(ARLResource):
         npoc_service_detection = fields.boolean(policy.pop("npoc_service_detection", False))
         desc = args.pop("desc", "")
 
+        # 只要获得关联资产组的配置
+        scope_config = policy.pop("scope_config", {})
+        scope_config = self._update_arg(scope_config, scope_config_fields)
+
         item = {
             "name": name,
             "policy": {
@@ -132,7 +157,8 @@ class AddARLPolicy(ARLResource):
                 "poc_config": poc_config,
                 "brute_config": brute_config,
                 "file_leak": file_leak,
-                "npoc_service_detection": npoc_service_detection
+                "npoc_service_detection": npoc_service_detection,
+                "scope_config": scope_config
             },
             "desc": desc,
             "update_date": utils.curr_date()

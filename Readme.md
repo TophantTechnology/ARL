@@ -34,28 +34,37 @@ docker-compose up -d
 详细说明可以参考: [Docker 环境安装 ARL](https://github.com/TophantTechnology/ARL/wiki/Docker-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85-ARL)
 
 ### 截图
-登录页面，默认端口5003 (https), 默认用户名密码admin/arlpass  
+
+1. 登录页面     
+默认端口5003 (https), 默认用户名密码admin/arlpass  
 ![登录页面](./image/login.png)
 
-任务页面
+2. 任务页面
 ![任务页面](./image/task.png)
 
-子域名页面
+3. 子域名页面
 ![子域名页面](./image/domain.png)
 
-站点页面
+4. 站点页面
 ![站点页面](./image/site.png)
 
-资产监控页面
+5. 资产监控页面
 ![资产监控页面](./image/monitor.png)
 详细说明可以参考：[资产分组和监控功能使用说明](https://github.com/TophantTechnology/ARL/wiki/%E8%B5%84%E4%BA%A7%E5%88%86%E7%BB%84%E5%92%8C%E7%9B%91%E6%8E%A7%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E)
 
-策略页面
+6. 策略页面
 ![策略配置页面](./image/policy.png)
 
-筛选站点进行任务下发
+7. 筛选站点进行任务下发
 ![筛选站点进行任务下发](./image/scan.png)
 详细说明可以参考： [2.3-新添加功能详细说明](https://github.com/TophantTechnology/ARL/wiki/ARL-2.3-%E6%96%B0%E6%B7%BB%E5%8A%A0%E5%8A%9F%E8%83%BD%E8%AF%A6%E7%BB%86%E8%AF%B4%E6%98%8E)
+
+8. 计划任务
+![计划任务](./image/task_scheduler.png)
+详细说明可以参考： [2.4.1-新添加功能详细说明](https://github.com/TophantTechnology/ARL/wiki/ARL-2.4.1-%E6%96%B0%E6%B7%BB%E5%8A%A0%E5%8A%9F%E8%83%BD%E8%AF%A6%E7%BB%86%E8%AF%B4%E6%98%8E)
+
+9. GitHub 监控任务
+![GitHub 监控任务](./image/github_monitor.png)
 
 ### 任务选项说明
 | 编号 |      选项      |                                       说明                                        |
@@ -72,13 +81,12 @@ docker-compose up -d
 | 10    | 端口扫描        | 是否开启端口扫描，不开启站点会默认探测80,443                                         |
 | 11   | 服务识别        | 是否进行服务识别，有可能会被防火墙拦截导致结果为空                                     |
 | 12   | 操作系统识别    | 是否进行操作系统识别，有可能会被防火墙拦截导致结果为空                                 |
-| 13   | Fofa IP查询    | 利用[Fofa](https://fofa.so/)  API进行查询域名                                      |
-| 14   | SSL 证书获取    | 对端口进行SSL 证书获取                                                             |
-| 15   | 站点识别        | 对站点进行指纹识别                                                                 |
-| 16   | 搜索引擎调用    | 利用搜索引擎结果爬取对应的URL                                                       |
-| 17   | 站点爬虫        | 利用静态爬虫对站点进行爬取对应的URL                                                  |
-| 18   | 站点截图        | 对站点首页进行截图                                                                 |
-| 19   | 文件泄露        | 对站点进行文件泄露检测，会被WAF拦截                                                  |
+| 13   | SSL 证书获取    | 对端口进行SSL 证书获取                                                             |
+| 14   | 站点识别        | 对站点进行指纹识别                                                                 |
+| 15   | 搜索引擎调用    | 利用搜索引擎结果爬取对应的URL                                                       |
+| 16   | 站点爬虫        | 利用静态爬虫对站点进行爬取对应的URL                                                  |
+| 17   | 站点截图        | 对站点首页进行截图                                                                 |
+| 18   | 文件泄露        | 对站点进行文件泄露检测，会被WAF拦截                                                  |
 
 
 ### 配置参数说明
@@ -92,6 +100,9 @@ Docker环境配置文件路径 `docker/config-docker.yaml`
 | RISKIQ            | riskiq API 配置信息                   |
 | GEOIP             | GEOIP 数据库路径信息                  |
 | FOFA              | FOFA API 配置信息                     |
+| DINGDING          | 钉钉消息推送配置                     |
+| EMAIL              | 邮箱发送配置                     |
+| GITHUB.TOKEN      |  GITHUB 搜索 TOKEN                 |
 | ARL.AUTH          | 是否开启认证，不开启有安全风险          |
 | ARL.API_KEY       | arl后端API调用key，如果设置了请注意保密 |
 | ARL.BLACK_IPS     | 为了防止SSRF，屏蔽的IP地址或者IP段      |

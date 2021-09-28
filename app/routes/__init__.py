@@ -191,7 +191,8 @@ class ARLResource(Resource):
             "site": "site",
             "domain": "domain",
             "ip": "ip",
-            "url": "url"
+            "url": "url",
+            "cip": "cidr_ip"
         }
         items_set = set()
         filed_name = _type_map_field_name.get(_type, "")
@@ -245,3 +246,9 @@ from .taskFofa import ns as task_fofa_ns
 from .console import ns as console_ns
 from .cip import ns as cip_ns
 from .fingerprint import ns as fingerprint_ns
+from .stat_finger import ns as stat_finger_ns
+from .github_task import ns as github_task_ns
+from .github_result import ns as github_result_ns
+from .github_monitor_result import ns as github_monitor_result_ns
+from .github_scheduler import ns as github_scheduler_ns
+from .task_schedule import ns as task_schedule_ns

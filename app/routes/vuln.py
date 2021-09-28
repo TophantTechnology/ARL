@@ -1,6 +1,9 @@
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
+from app import utils
+from app.modules import ErrorMsg
 
 ns = Namespace('vuln', description="漏洞信息")
 
@@ -26,7 +29,7 @@ class ARLUrl(ARLResource):
     @ns.expect(parser)
     def get(self):
         """
-        URL信息查询
+        漏洞 信息查询
         """
         args = self.parser.parse_args()
         data = self.build_data(args=args, collection='vuln')
@@ -34,4 +37,24 @@ class ARLUrl(ARLResource):
         return data
 
 
+delete_vuln_fields = ns.model('deleteVulnFields',  {
+    '_id': fields.List(fields.String(required=True, description="风险信息 _id"))
+})
+
+
+@ns.route('/delete/')
+class DeleteARLVuln(ARLResource):
+    @auth
+    @ns.expect(delete_vuln_fields)
+    def post(self):
+        """
+        删除 风险信息
+        """
+        args = self.parse_args(delete_vuln_fields)
+        id_list = args.pop('_id', [])
+        for _id in id_list:
+            query = {'_id': ObjectId(_id)}
+            utils.conn_db('vuln').delete_one(query)
+
+        return utils.build_ret(ErrorMsg.Success, {'_id': id_list})
 

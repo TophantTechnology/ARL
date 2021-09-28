@@ -4,8 +4,9 @@ from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app import utils
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
-from app.modules import ErrorMsg, CeleryAction
-from app import celerytask
+from app.modules import ErrorMsg
+from app.helpers import submit_task_task, get_ip_domain_list, get_options_by_policy_id
+from app.modules import TaskTag
 
 ns = Namespace('asset_domain', description="资产组域名信息")
 
@@ -29,6 +30,7 @@ base_search_fields.update(base_query_fields)
 add_domain_fields = ns.model('addAssetDomain',  {
     'domain': fields.String(required=True, description="域名"),
     'scope_id': fields.String(required=True, description="资产组范围ID"),
+    'policy_id': fields.String(description="策略 ID"),
 })
 
 
@@ -55,20 +57,25 @@ class ARLAssetDomain(ARLResource):
         """
         args = self.parse_args(add_domain_fields)
         raw_domain = args.pop("domain")
-        domain_list = re.split(r",|\s", raw_domain)
-        domain_list = list(set(filter(None, domain_list)))
         scope_id = args.pop("scope_id")
+        policy_id = args.pop("policy_id")
+
+        try:
+            _, domain_list = get_ip_domain_list(raw_domain)
+        except Exception as e:
+            return utils.build_ret(ErrorMsg.Error, {"error": str(e)})
 
         scope_data = utils.conn_db('asset_scope').find_one({"_id": ObjectId(scope_id)})
         if not scope_data:
             return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id})
 
+        scope_type = scope_data.get("scope_type", "domain")
+        if scope_type != 'domain':
+            return utils.build_ret(ErrorMsg.Error, {"error": "目前仅域名资产组可添加子域名"})
+
         domain_in_scope_list = []
         add_domain_list = []
         for domain in domain_list:
-            if not utils.is_valid_domain(domain):
-                return utils.build_ret(ErrorMsg.DomainInvalid, {"domain": domain})
-
             if utils.get_fld(domain) not in scope_data["scope"]:
                 return utils.build_ret(ErrorMsg.DomainNotFoundViaScope, {"domain": domain})
 
@@ -78,23 +85,49 @@ class ARLAssetDomain(ARLResource):
                 continue
             add_domain_list.append(domain)
 
-        for domain in add_domain_list:
-            options = {
-                "celery_action": CeleryAction.ADD_DOMAIN_TO_SCOPE,
-                "data": {
-                    "domain": domain,
-                    "scope_id": scope_id
-                }
-            }
-            celerytask.arl_task.delay(options=options)
-
         ret_data = {
             "domain": ",".join(add_domain_list),
             "scope_id": scope_id,
-            "domain_in_scope": ",".join(domain_in_scope_list)
+            "domain_in_scope": ",".join(domain_in_scope_list),
+            "add_domain_len": len(add_domain_list)
         }
+
         if len(add_domain_list) == 0:
             return utils.build_ret(ErrorMsg.DomainNotFoundNotInScope, ret_data)
+
+        target = " ".join(add_domain_list)
+        name = "添加域名-{}".format(scope_data["name"])
+
+        options = {
+            'domain_brute': True,
+            'domain_brute_type': 'test',
+            'port_scan_type': 'test',
+            'port_scan': True,
+            'service_detection': False,
+            'service_brute': False,
+            'os_detection': False,
+            'site_identify': False,
+            'site_capture': False,
+            'file_leak': False,
+            'alt_dns': False,
+            'site_spider': False,
+            'search_engines': False,
+            'ssl_cert': False,
+            'fofa_search': False,
+            'crtsh_search': False,
+            'related_scope_id': scope_id
+        }
+
+        try:
+            if policy_id and len(policy_id) == 24:
+                policy_options = get_options_by_policy_id(policy_id=policy_id, task_tag=TaskTag.TASK)
+                if policy_options:
+                    options.update(policy_options)
+
+            submit_task_task(target=target, name=name, options=options)
+        except Exception as e:
+            logger.exception(e)
+            return utils.build_ret(ErrorMsg.Error, {"error": str(e)})
 
         return utils.build_ret(ErrorMsg.Success, ret_data)
 

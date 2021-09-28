@@ -39,6 +39,11 @@ EMAIL:
   PASSWORD: ""
   TO: ""
 
+#GITHUB 搜索 TOKEN
+GITHUB:
+  TOKEN: ""
+
+
 ARL:
   AUTH: true
   #API 认证key, 可以访问api/doc查看文档
@@ -47,7 +52,7 @@ ARL:
     - 127.0.0.0/8
     - 0.0.0.0/8
     - 172.16.0.0/12
-    - 100.0.0.0/8
+    - 100.64.0.0/10
     #- 10.0.0.0/8
     #- 192.168.0.0/16
   FORBIDDEN_DOMAINS:

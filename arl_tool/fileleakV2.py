@@ -91,7 +91,7 @@ class BaseThread(object):
         except requests.exceptions.RequestException as e:
             pass
 
-        except Exception as e:
+        except BaseException as e:
             logger("error on {}".format(url))
             self.semaphore.release()
             raise e

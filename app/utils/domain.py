@@ -46,6 +46,11 @@ def is_valid_domain(domain):
         return False
     if ":" in domain:
         return False
+
+    # 不允许下发特殊二级域名
+    if domain in ["com.cn", "gov.cn", "edu.cn"]:
+        return False
+
     if domain_parsed(domain):
         return True
 

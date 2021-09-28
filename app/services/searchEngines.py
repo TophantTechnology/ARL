@@ -7,23 +7,27 @@ from app import utils
 logger = utils.get_logger()
 
 
-class BaiduSearch():
+class BaiduSearch(object):
     def __init__(self, keyword=None, page_num=6):
         self.search_url = "https://www.baidu.com/s?rn=100&pn={page}&wd={keyword}"
         self.num_pattern = re.compile(r'百度为您找到相关结果约([\d,]*)个')
-        self.frist_html = ""
+        self.first_html = ""
         self.keyword = keyword
         self.page_num = page_num
         self.pq_query = "#content_left h3.t a"
         self.search_result_num = 0
-        self.default_interval = 0.2
+        self.default_interval = 3
 
     def result_num(self):
         url = self.search_url.format(page=0, keyword=quote(self.keyword))
-        #logger.info("search url {}".format(url))
+
         html = utils.http_req(url).text
         self.first_html = html
         result = re.findall(self.num_pattern, html)
+        if not result:
+            logger.warning("Unable to get baidu search results， {}".format(self.keyword))
+            return 0
+
         num = int("".join(result[0].split(",")))
         self.search_result_num = num
         return num
@@ -47,6 +51,9 @@ class BaiduSearch():
         return list(urls)
 
     def run(self):
+        logger.info("BaiduSearch, sleep 5 on {}".format(self.keyword))
+        time.sleep(5)
+
         self.result_num()
         logger.info("baidu search {} results found for keyword {}".format(self.search_result_num, self.keyword))
         urls = []
@@ -65,7 +72,7 @@ class BaiduSearch():
         return urls
 
 
-class BingSearch():
+class BingSearch(object):
     def __init__(self, keyword=None, page_num=6):
         self.search_url = "https://cn.bing.com/search?q={keyword}&go=Search&qs=ds&form=QBRE&first={page}"
         self.num_pattern = re.compile(r'<span class="sb_count">([\d,]*) (results|条结果)</span>')
@@ -73,13 +80,14 @@ class BingSearch():
         self.keyword = keyword
         self.page_num = page_num
         self.cookies = {'_SS': '1'}
-        self.default_interval = 0.2
+        self.default_interval = 3
         self.search_result_num = 0
+        self.first_html = ""
 
     def result_num(self):
         num = 0
         url = self.search_url.format(page=1, keyword=quote(self.keyword))
-        #logger.info("search url {}".format(url))
+
         html = utils.http_req(url, cookies=self.cookies).text
         self.first_html = html
         result = re.findall(self.num_pattern, html)
@@ -98,6 +106,8 @@ class BingSearch():
         return list(urls)
 
     def run(self):
+        logger.info("BingSearch, sleep 5 on {}".format(self.keyword))
+        time.sleep(5)
         self.result_num()
         logger.info("bing search {} results found for keyword {}".format(self.search_result_num, self.keyword))
         urls = []
@@ -177,9 +187,10 @@ class DogeSearch():
 def baidu_search(domain, page_num=6):
     keyword = "site:{}".format(domain)
     b = BaiduSearch(keyword, page_num)
-    urls =  b.run()
+    urls = b.run()
     urls = [u for u in urls if domain in urlparse(u).netloc]
     return utils.rm_similar_url(urls)
+
 
 def bing_search(domain, page_num=6):
     urls = []
