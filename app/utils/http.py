@@ -1,4 +1,5 @@
-import  re
+import re
+
 
 def get_title(body):
     """
@@ -18,7 +19,8 @@ def get_title(body):
 
 
 def get_headers(conn):
-    #version 字段目前只能是10或者11
+    # version 字段目前只能是10或者11
+
     raw = conn.raw
     version = "1.1"
     if raw.version == 10:
@@ -26,7 +28,7 @@ def get_headers(conn):
 
     first_line = "HTTP/{} {} {}\n".format(version, raw.status, raw.reason)
 
-    headers =  str(raw._fp.headers)
+    headers = str(raw._fp.headers)
 
     headers = headers.strip()
     if not conn.headers.get("Content-Length"):

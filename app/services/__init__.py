@@ -20,3 +20,4 @@ from .syncAsset import sync_asset
 from .npoc import run_risk_cruising, run_sniffer
 from .crtshClient import crtsh_search
 from .autoTag import auto_tag
+from .githubSearch import github_search

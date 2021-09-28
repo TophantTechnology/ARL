@@ -69,6 +69,9 @@ class Config(object):
     EMAIL_TO = ""
     FORBIDDEN_DOMAINS = ["gov.cn", "edu.cn", "org.cn"]
 
+    GITHUB_TOKEN = ""
+    GITHUB_HASH_FILE = os.path.join(TMP_PATH, 'github.hash')
+
 
 try:
     with open(os.path.join(basedir, 'config.yaml')) as f:
@@ -135,7 +138,9 @@ try:
         if y["EMAIL"].get("TO"):
             Config.EMAIL_TO = y["EMAIL"]["TO"]
 
-
+    if y.get("GITHUB"):
+        if y["GITHUB"].get("TOKEN"):
+            Config.GITHUB_TOKEN = y["GITHUB"]["TOKEN"]
 
 except Exception as e:
     print("Parse config.yaml error {}".format(e))

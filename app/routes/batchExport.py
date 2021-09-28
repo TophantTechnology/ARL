@@ -107,3 +107,20 @@ class BatchExportIpPort(ARLResource):
         response = self.send_file(items_set, "ip_port")
 
         return response
+
+
+@ns.route('/cip/')
+class BatchExportCIP(ARLResource):
+
+    @auth
+    @ns.expect(batch_export_fields)
+    def post(self):
+        """
+        C段 批量导出
+        """
+        args = self.parse_args(batch_export_fields)
+        task_id_list = args.get("task_id", [])
+
+        response = self.send_batch_export_file(task_id_list, "cip")
+
+        return response

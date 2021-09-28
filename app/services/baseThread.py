@@ -8,7 +8,6 @@ from app.modules import DomainInfo
 logger = utils.get_logger()
 
 
-
 class BaseThread(object):
     def __init__(self, targets, concurrency=6):
         self.concurrency = concurrency

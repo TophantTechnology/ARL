@@ -1519,20 +1519,6 @@
         "website": "https://www.riskivy.com/",
         "fofa_rule": "body=\"jquery\""
     },
-    "bootstrap": {
-        "cats": [
-            1111
-        ],
-        "headers": [],
-        "html": [
-            "bootstrap.css",
-            "bootstrap.min.css"
-        ],
-        "title": [],
-        "icon": "default.png",
-        "website": "https://www.riskivy.com/",
-        "fofa_rule": "body=\"bootstrap.css\" || body=\"bootstrap.min.css\""
-    },
     "d3": {
         "cats": [
             1111

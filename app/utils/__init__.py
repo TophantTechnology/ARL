@@ -22,6 +22,8 @@ from .cert import get_cert
 from .arlupdate import arl_update
 from .cdn import get_cdn_name_by_cname, get_cdn_name_by_ip
 from .device import device_info
+from .cron import check_cron, check_cron_interval
+
 
 def load_file(path):
     with open(path, "r+", encoding="utf-8") as f:
@@ -203,5 +205,4 @@ def exit_gracefully(signum, frame):
 from .user import user_login, user_login_header, auth, user_logout, change_pass
 from .push import message_push
 from .fingerprint import parse_human_rule, transform_rule_map
-
 

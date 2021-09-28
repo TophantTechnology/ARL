@@ -153,6 +153,7 @@ admin.tgz
 admin.zip
 admin/
 admin/admin
+admin/adminer.php
 admin/adminLogin.do
 admin/checkLogin.do
 admin/cores
@@ -170,6 +171,8 @@ adminer.php
 adminer.sql
 administrator
 adminLogin.do
+airflow
+alertmanager
 altair
 ansible
 antx.properties
@@ -242,6 +245,7 @@ Application/Runtime/common~runtime.php
 applicationContext.xml
 applications.html
 archaius
+archery
 aspxspy.aspx
 auth/login
 auth/login/sentry/
@@ -283,6 +287,8 @@ build.xml
 cacti
 cacti/
 cacti/cacti.sql
+cas
+casServer
 cert-key.pem
 cgi-bin/test-cgi
 CHANGELOG
@@ -499,6 +505,7 @@ explorer.html
 Fckeditor
 FCKeditor/editor/filemanager/connectors/asp/connector.asp
 fetch
+fileServer
 filezilla.xml
 filezilla/filezilla.xml
 filezilla/recentservers.xml
@@ -534,6 +541,7 @@ Help
 help/sys/help.html
 heroku.json
 historys.html
+hive
 host
 hosts.html
 htdocs.tar.gz
@@ -667,6 +675,7 @@ monitor
 monitoring
 mw-config/
 myadmin/login.php
+nacos/
 nagios
 nginx.conf
 nginx_status
@@ -714,6 +723,7 @@ phpmyadmin
 phpMyAdmin
 phpmyadmin/index.php
 phpMyAdmin/index.php
+phpMyAdmin/setup/
 phpspy.php
 phpunit.xml
 pigoss
@@ -1121,6 +1131,11 @@ xsl/common.xsl
 xslt/
 xsql/
 XSQLConfig.xml
+xxl
+xxl-job
+xxl-job-admin
+xxlcof
+xxljob
 yaml.log
 yaml_cron.log
 yapi/

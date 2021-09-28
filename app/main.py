@@ -17,7 +17,7 @@ authorizations = {
 }
 
 api = Api(arl_app, prefix="/api", doc="/api/doc", title='ARL backend API', authorizations=authorizations,
-    description='ARL（Asset Reconnaissance Lighthouse）资产侦察灯塔系统', security="ApiKeyAuth", version="2.4")
+    description='ARL（Asset Reconnaissance Lighthouse）资产侦察灯塔系统', security="ApiKeyAuth", version="2.4.1")
 
 
 api.add_namespace(routes.task_ns)
@@ -45,6 +45,12 @@ api.add_namespace(routes.task_fofa_ns)
 api.add_namespace(routes.console_ns)
 api.add_namespace(routes.cip_ns)
 api.add_namespace(routes.fingerprint_ns)
+api.add_namespace(routes.stat_finger_ns)
+api.add_namespace(routes.github_task_ns)
+api.add_namespace(routes.github_result_ns)
+api.add_namespace(routes.github_scheduler_ns)
+api.add_namespace(routes.github_monitor_result_ns)
+api.add_namespace(routes.task_schedule_ns)
 
 arl_update()
 

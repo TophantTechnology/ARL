@@ -212,6 +212,8 @@
             "edgesuite.net",
             "akadns.net",
             "edgekey.net",
+            "akamaihd.net",
+            "akamaized.net",
             "akamai.net"
         ],
         "ip_cidr":[

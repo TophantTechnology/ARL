@@ -1,6 +1,9 @@
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
+from app import utils
+from app.modules import ErrorMsg
 
 ns = Namespace('fileleak', description="文件泄漏信息")
 
@@ -32,3 +35,26 @@ class ARLFileLeak(ARLResource):
         data = self.build_data(args=args, collection='fileleak')
 
         return data
+
+
+delete_fileleak_fields = ns.model('deleteFileleakFields',  {
+    '_id': fields.List(fields.String(required=True, description="文件泄漏 _id"))
+})
+
+
+@ns.route('/delete/')
+class DeleteARLFileleak(ARLResource):
+    @auth
+    @ns.expect(delete_fileleak_fields)
+    def post(self):
+        """
+        删除 文件泄漏
+        """
+        args = self.parse_args(delete_fileleak_fields)
+        id_list = args.pop('_id', [])
+        for _id in id_list:
+            query = {'_id': ObjectId(_id)}
+            utils.conn_db('fileleak').delete_one(query)
+
+        return utils.build_ret(ErrorMsg.Success, {'_id': id_list})
+

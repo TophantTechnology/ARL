@@ -36,6 +36,13 @@ class TaskStatus:
     STOP = "stop"
 
 
+class TaskScheduleStatus:
+    DONE = "done"
+    SCHEDULED = "scheduled"
+    STOP = "stop"
+    ERROR = "error"
+
+
 class TaskTag:
     """任务标签"""
 
@@ -47,6 +54,22 @@ class TaskTag:
 
     """风险巡航任务"""
     RISK_CRUISING = "risk_cruising"
+
+
+class TaskType:
+    """任务目标类别"""
+
+    """IP任务"""
+    IP = "ip"
+
+    """域名任务"""
+    DOMAIN = "domain"
+
+    """站点， 风险巡航"""
+    RISK_CRUISING = "risk_cruising"
+
+    """资产站点更新"""
+    ASSET_SITE_UPDATE = "asset_site_update"
 
 
 class SiteAutoTag:
@@ -96,14 +119,20 @@ class CeleryAction:
     """同步已有任务"""
     DOMAIN_TASK_SYNC_TASK = "domain_task_sync_task"
 
-    """添加任务到资产组中"""
-    ADD_DOMAIN_TO_SCOPE = "add_domain_to_scope"
-
     """PoC运行任务"""
     RUN_RISK_CRUISING = "run_risk_cruising"
 
     """Fofa 查询任务"""
     FOFA_TASK = "fofa_task"
+
+    """Github 泄漏任务"""
+    GITHUB_TASK_TASK = "github_task_task"
+
+    """Github 泄漏监控任务"""
+    GITHUB_TASK_MONITOR = "github_task_monitor"
+
+    """资产站点更新任务"""
+    ASSET_SITE_UPDATE = "asset_site_update"
 
 
 error_map = {
@@ -153,11 +182,11 @@ error_map = {
     },
     "DomainViaJob": {
         "message": "给定资产范围中的域名已经存在监控任务",
-        "code": 701,
+        "code": 699,
     },
     "DomainNotViaJob": {
         "message": "给定资产范围中的域名不存在监控任务",
-        "code": 702,
+        "code": 698,
     },
     "JobNotFound": {
         "message": "监控任务未找到",
@@ -287,9 +316,49 @@ error_map = {
         "message": "规则无效",
         "code": 1402,
     },
+    "GithubKeywordEmpty": {
+        "message": "关键字为空",
+        "code": 1501,
+    },
     "Error": {
         "message": "系统异常",
         "code": 500,
+    },
+    "CronError": {
+        "message": "Cron 表达式错误",
+        "code": 1502,
+    },
+    "IPInvalid": {
+        "message": "IP 无效",
+        "code": 1503,
+    },
+    "IPNotFoundViaScope": {
+        "message": "不在给定的资产范围中",
+        "code": 1504,
+    },
+    "PortCustomInvalid": {
+        "message": "自定义端口信息错误",
+        "code": 1506,
+    },
+    "TaskScheduleTypeInvalid": {
+        "message": "计划任务类型错误",
+        "code": 1601,
+    },
+    "DateInvalid": {
+        "message": "时间错误",
+        "code": 1602,
+    },
+    "TaskTagInvalid": {
+        "message": "任务类型错误",
+        "code": 1603,
+    },
+    "FutureDateInvalid": {
+        "message": "时间已经过去了",
+        "code": 1604,
+    },
+    "TaskScheduleNotFound": {
+        "message": "计划任务没有找到",
+        "code": 1605,
     }
 }
 
@@ -340,5 +409,15 @@ class ErrorMsg:
     ScopeTypeIsNotIP = error_map["ScopeTypeIsNotIP"]
     IsForbiddenDomain = error_map["IsForbiddenDomain"]
     RuleInvalid = error_map["RuleInvalid"]
+    GithubKeywordEmpty = error_map["GithubKeywordEmpty"]
     Error = error_map["Error"]
+    CronError = error_map["CronError"]
+    IPInvalid = error_map["IPInvalid"]
+    IPNotFoundViaScope = error_map["IPNotFoundViaScope"]
+    PortCustomInvalid = error_map["PortCustomInvalid"]
+    TaskScheduleTypeInvalid = error_map["TaskScheduleTypeInvalid"]
+    DateInvalid = error_map["DateInvalid"]
+    TaskTagInvalid = error_map["TaskTagInvalid"]
+    FutureDateInvalid = error_map["FutureDateInvalid"]
+    TaskScheduleNotFound = error_map["TaskScheduleNotFound"]
 

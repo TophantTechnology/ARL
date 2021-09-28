@@ -37,14 +37,14 @@ add_site_fields = ns.model('addAssetSite',  {
 
 
 @ns.route('/')
-class ARLDomain(ARLResource):
+class ARLAssetSite(ARLResource):
     parser = get_arl_parser(base_search_fields, location='args')
 
     @auth
     @ns.expect(parser)
     def get(self):
         """
-        域名信息查询
+        资产站点信息查询
         """
         args = self.parser.parse_args()
         data = self.build_data(args=args, collection='asset_site')
@@ -68,12 +68,22 @@ class ARLDomain(ARLResource):
         if not scope_data:
             return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id})
 
-        fld = utils.get_fld(url)
-        if not fld:
-            return utils.build_ret(ErrorMsg.SiteURLNotDomain, {"site": url})
+        scope_type = scope_data.get("scope_type", "domain")
+        if scope_type == "ip":
+            host_name = utils.get_hostname(url)
+            host_ip = host_name.split(":")[0]
+            if utils.get_ip_type(host_ip) == "ERROR":
+                return utils.build_ret(ErrorMsg.IPInvalid, {"ip": host_ip})
 
-        if fld not in scope_data["scope"]:
-            return utils.build_ret(ErrorMsg.DomainNotFoundViaScope, {"site": url})
+            if not utils.ip.ip_in_scope(host_ip, scope_data.get("scope_array", [])):
+                return utils.build_ret(ErrorMsg.IPNotFoundViaScope, {"ip": host_ip})
+        else:
+            fld = utils.get_fld(url)
+            if not fld:
+                return utils.build_ret(ErrorMsg.SiteURLNotDomain, {"site": url})
+
+            if fld not in scope_data["scope"]:
+                return utils.build_ret(ErrorMsg.DomainNotFoundViaScope, {"site": url})
 
         site_data = utils.conn_db('asset_site').find_one({"site": url, "scope_id": scope_id})
         if site_data:

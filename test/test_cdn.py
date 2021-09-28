@@ -21,6 +21,8 @@ class TestCDNName(unittest.TestCase):
         name = get_cdn_name_by_cname("zff.xxgslb.com")
         self.assertTrue(name == "CDN")
 
+        name = get_cdn_name_by_cname("zff.akamaized.net")
+        self.assertTrue(name == "AkamaiCDN")
 
 if __name__ == '__main__':
     unittest.main()

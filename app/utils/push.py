@@ -127,7 +127,7 @@ class Push(object):
         html += "<br/><br/>"
         html += dict2table(self.site_info_list)
 
-        title = "[{}] 灯塔消息推送".format(self.task_name)
+        title = "[{}] 灯塔消息推送".format(self.task_name[:50])
         send_email(host=Config.EMAIL_HOST, port=Config.EMAIL_PORT, mail=Config.EMAIL_USERNAME,
                    password=Config.EMAIL_PASSWORD, to=Config.EMAIL_TO, title=title, html=html)
 

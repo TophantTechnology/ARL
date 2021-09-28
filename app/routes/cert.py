@@ -1,6 +1,9 @@
+from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
+from app import utils
+from app.modules import ErrorMsg
 
 ns = Namespace('cert', description="证书信息")
 
@@ -35,8 +38,28 @@ class ARLCert(ARLResource):
         SSL证书查询
         """
         args = self.parser.parse_args()
-        data = self.build_data(args = args,  collection = 'cert')
+        data = self.build_data(args=args,  collection='cert')
 
         return data
 
 
+delete_cert_fields = ns.model('deleteCertFields',  {
+    '_id': fields.List(fields.String(required=True, description="证书 _id"))
+})
+
+
+@ns.route('/delete/')
+class DeleteARLCert(ARLResource):
+    @auth
+    @ns.expect(delete_cert_fields)
+    def post(self):
+        """
+        删除 SSL 证书信息
+        """
+        args = self.parse_args(delete_cert_fields)
+        id_list = args.pop('_id', [])
+        for _id in id_list:
+            query = {'_id': ObjectId(_id)}
+            utils.conn_db('cert').delete_one(query)
+
+        return utils.build_ret(ErrorMsg.Success, {'_id': id_list})

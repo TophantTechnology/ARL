@@ -924,6 +924,7 @@ api1
 api2
 api3
 apidev
+apigate
 apigateway
 apim
 apis

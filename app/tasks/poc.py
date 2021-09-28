@@ -151,7 +151,6 @@ class RiskCruising(CommonTask):
             if cut_target:
                 self.user_target_site_set.add(cut_target)
 
-
     def fetch_site(self):
         site_info_list = services.fetch_site(self.user_target_site_set)
         for site_info in site_info_list:

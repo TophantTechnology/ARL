@@ -6,7 +6,10 @@ from app import celerytask
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser, conn
 from app import utils
-from app.modules import TaskStatus, ErrorMsg, TaskSyncStatus, CeleryAction, TaskTag
+from app.modules import TaskStatus, ErrorMsg, TaskSyncStatus, CeleryAction, TaskTag, TaskType
+from app.helpers import get_options_by_policy_id, submit_task_task,\
+    submit_risk_cruising, get_scope_by_scope_id, check_target_in_scope
+
 
 ns = Namespace('task', description="资产发现任务信息")
 
@@ -28,10 +31,8 @@ base_search_task_fields = {
     'options.site_identify': fields.Boolean(description="是否开启站点识别"),
     'options.file_leak': fields.Boolean(description="是否开启文件泄露扫描"),
     'options.alt_dns': fields.Boolean(description="是否开启DNS字典智能生成"),
-    'options.github_search_domain': fields.Boolean(description="是否开启GitHub搜索"),
-    'options.fetch_api_path': fields.Boolean(description="是否开启JS PATH收集"),
-    'options.fofa_search': fields.Boolean(description="是否开启Fofa IP 查询"),
-    'options.sub_takeover': fields.Boolean(description="是否开启子域名劫持扫描"),
+    # 'options.github_search_domain': fields.Boolean(description="是否开启GitHub搜索"),
+    # 'options.fetch_api_path': fields.Boolean(description="是否开启JS PATH收集"),
     'options.search_engines': fields.Boolean(description="是否开启搜索引擎调用"),
     'options.site_spider': fields.Boolean(description="是否开启站点爬虫"),
     'options.riskiq_search': fields.Boolean(description="是否开启 Riskiq 调用"),
@@ -66,8 +67,6 @@ add_task_fields = ns.model('AddTask', {
     "github_search_domain": fields.Boolean(),
     "ssl_cert": fields.Boolean(),
     "fetch_api_path": fields.Boolean(),
-    "fofa_search": fields.Boolean(),
-    "sub_takeover": fields.Boolean(),
     "crtsh_search": fields.Boolean(example=True, default=True),
     "skip_scan_cdn_ip": fields.Boolean()
 })
@@ -98,137 +97,24 @@ class ARLTask(ARLResource):
 
         name = args.pop('name')
         target = args.pop('target')
-        target = target.strip().lower()
 
-        task_data = {
-            "name": name,
-            "target": target,
-            "start_time": "-",
-            "end_time": "-",
-            "task_tag": "task", #标记为正常下发的任务
-            "service": [],
-            "status": "waiting",
-            "options": args,
-            "type": "domain"
-        }
+        try:
+            task_data_list = submit_task_task(target=target, name=name, options=args)
+        except Exception as e:
+            logger.exception(e)
+            return utils.build_ret(ErrorMsg.Error, {"error": str(e)})
 
-        logger.info(task_data)
+        if not task_data_list:
+            return utils.build_ret(ErrorMsg.TaskTargetIsEmpty, {"target": target})
 
-        target_lists = re.split(r",|\s", target)
-        # 清除空白符
-        target_lists = list(filter(None, target_lists))
-        ip_target_list = []
-        ret_items = []
-
-        for item in target_lists:
-            if not utils.is_valid_domain(item) and not utils.is_vaild_ip_target(item):
-                return utils.build_ret(ErrorMsg.TargetInvalid, data={"target": item})
-
-            if utils.domain.is_forbidden_domain(item):
-                return utils.build_ret(ErrorMsg.IsForbiddenDomain, data={"target": item})
-
-            if utils.is_vaild_ip_target(item):
-                if not utils.not_in_black_ips(item):
-                    return utils.build_ret(ErrorMsg.IPInBlackIps, data={"ip": item})
-
-        for item in target_lists:
-            if utils.is_valid_domain(item):
-                ret_item = {
-                    "target": item,
-                    "type":"domain"
-                }
-                domain_task_data = task_data.copy()
-                domain_task_data["target"] = item
-                _task_data = submit_task(domain_task_data)
-                if isinstance(_task_data, str):
-                    return utils.build_ret(ErrorMsg.Error, {"error": _task_data})
-
-                ret_item["task_id"] = _task_data.get("task_id", "")
-                ret_item["celery_id"] = _task_data.get("celery_id", "")
-                ret_items.append(ret_item)
-
-            elif utils.is_vaild_ip_target(item):
-                if utils.not_in_black_ips(item):
-                    ip_target_list.append(item)
-                else:
-                    ret_item = {
-                        "target": item,
-                        "type": "in black ip list",
-                        "task_id": "",
-                        "celery_id": ""
-                    }
-                    ret_items.append(ret_item)
-
-            else:
-                ret_item = {
-                    "target": item,
-                    "type": "unknown",
-                    "task_id": "",
-                    "celery_id": ""
-                }
-                ret_items.append(ret_item)
-
-        if ip_target_list:
-            ip_task_data = task_data.copy()
-            ip_task_data["target"] = " ".join(ip_target_list)
-            ip_task_data["type"] = "ip"
-
-            ret_item = {
-                "target": ip_task_data["target"],
-                "type": ip_task_data["type"]
-            }
-
-            _task_data = submit_task(ip_task_data)
-            if isinstance(_task_data, str):
-                return utils.build_ret(ErrorMsg.Error, {"error": _task_data})
-
-            ret_item["task_id"] = _task_data.get("task_id", "")
-            ret_item["celery_id"] = _task_data.get("celery_id", "")
-            ret_items.append(ret_item)
-
-        ret_data = {
-            "items": ret_items,
-            "options": args,
+        ret = {
+            "code": 200,
             "message": "success",
-            "code": 200
+            "items": task_data_list
         }
+        return ret
 
-        return ret_data
-
-
-def submit_task(task_data):
-    target = task_data["target"]
-    conn('task').insert_one(task_data)
-    task_id = str(task_data.pop("_id"))
-    task_data["task_id"] = task_id
-
-    celery_action = CeleryAction.DOMAIN_TASK
-    if task_data["type"] == "domain":
-        celery_action = CeleryAction.DOMAIN_TASK
-    elif task_data["type"] == "ip":
-        celery_action = CeleryAction.IP_TASK
-    elif task_data["type"] == TaskTag.RISK_CRUISING:
-        celery_action = CeleryAction.RUN_RISK_CRUISING
-
-    task_options = {
-        "celery_action": celery_action,
-        "data": task_data
-    }
-
-    try:
-        celery_id = celerytask.arl_task.delay(options = task_options)
-        logger.info("target:{} task_id:{} celery_id:{}".format(target, task_id, celery_id))
-
-        values = {"$set": {"celery_id": str(celery_id)}}
-        task_data["celery_id"] = str(celery_id)
-        conn('task').update_one({"_id": ObjectId(task_id)}, values)
-
-    except Exception as e:
-        conn('task').delete_one({"_id": ObjectId(task_id), "status" : TaskStatus.WAITING})
-        logger.info("下发失败 {}".format(target))
-        return str(e)
-
-    return task_data
+        # return utils.build_ret(ErrorMsg.Success, {"items": task_data_list})
 
 
 batch_stop_fields = ns.model('BatchStop',  {
@@ -322,7 +208,7 @@ class DeleteTask(ARLResource):
 
         for task_id in task_id_list:
             utils.conn_db('task').delete_many({'_id': ObjectId(task_id)})
-            table_list = ["cert", "domain", "fileleak", "ip", "service", "site", "url", "vuln"]
+            table_list = ["cert", "domain", "fileleak", "ip", "service", "site", "url", "vuln", "cip"]
             if del_task_data_flag:
                 for name in table_list:
                     utils.conn_db(name).delete_many({'task_id': task_id})
@@ -454,194 +340,58 @@ class TaskByPolicy(ARLResource):
         if task_tag not in task_tag_enum:
             return utils.build_ret("task_tag 只能取 {}".format(",".join(task_tag_enum)), {})
 
-        target_lists = re.split(r",|\s", target)
+        options = get_options_by_policy_id(policy_id, task_tag)
 
-        task_data = {
-            "name": name,
-            "target": target,
-            "start_time": "-",
-            "end_time": "-",
-            "task_tag": "task",  # 标记为正常下发的任务
-            "service": [],
-            "status": "waiting",
-            "options": {},
-            "type": "domain"
-        }
-        options = self._get_options_by_policy_id(policy_id, task_tag)
         if not options:
             return utils.build_ret(ErrorMsg.PolicyIDNotFound, {"policy_id": policy_id})
 
-        policy_name = options.pop("policy_name")
-        task_data["options"] = options
-        task_data["policy_name"] = policy_name
-        task_data["policy_id"] = policy_id
-
-        if task_tag == TaskTag.TASK:
-            return self._add_task(target_lists, task_data)
-
-        if task_tag == TaskTag.RISK_CRUISING:
-            if len(options["poc_config"]) == 0 and len(options["brute_config"]) == 0:
-                return utils.build_ret(ErrorMsg.RiskCruisingPoCConfigIsEmpty, {})
-
-            task_data["type"] = TaskTag.RISK_CRUISING
-            task_data["task_tag"] = TaskTag.RISK_CRUISING
-
-            target_items = []
-            for x in target_lists:
-                if not x:
-                    continue
-                if "://" not in x:
-                    target_items.append(x)
-                    continue
-
-                item = utils.url.cut_filename(x)
-                if item:
-                    target_items.append(item)
-
-            target_items = list(set(target_items))
-            target_len = 0
-            if target_items:
-                task_data["cruising_target"] = target_items
-                target_len = len(target_items)
-
-            elif result_set_id:
-                query = {"_id": ObjectId(result_set_id)}
-                item = utils.conn_db('result_set').find_one(query, {"total": 1})
-                if not item:
-                    return utils.build_ret(ErrorMsg.ResultSetIDNotFound, {"result_set_id": result_set_id})
-
-                if item["total"] == 0:
-                    return utils.build_ret(ErrorMsg.ResultSetIsEmpty, {"result_set_id": result_set_id})
-                target_len = item["total"]
-                task_data["result_set_id"] = result_set_id
-            else:
-                return utils.build_ret(ErrorMsg.PoCTargetIsEmpty, {})
-
-            poc_config = options["poc_config"]
-            target_field = "目标：{}， PoC：{}".format(target_len, len(poc_config))
-
-            ret_item = {
-                "target": target_field,
-                "type": TaskTag.RISK_CRUISING
-            }
-            task_data["target"] = target_field
-
-            _task_data = submit_task(task_data)
-            if isinstance(_task_data, str):
-                return utils.build_ret(ErrorMsg.Error, {"error": _task_data})
-
-            ret_item["task_id"] = _task_data.get("task_id", "")
-            ret_item["celery_id"] = _task_data.get("celery_id", "")
-            return utils.build_ret(ErrorMsg.Success, {"items": [ret_item]})
-
-    def _get_options_by_policy_id(self, policy_id, task_tag):
-        query = {
-            "_id": bson.ObjectId(policy_id)
-        }
-        data = utils.conn_db("policy").find_one(query)
-        if not data:
-            return
-
-        policy = data["policy"]
-        options = {
-            "policy_name": data["name"]
-        }
-        domain_config = policy.pop("domain_config")
-        ip_config = policy.pop("ip_config")
-        site_config = policy.pop("site_config")
-
-        """仅仅资产发现任务需要这些"""
-        if task_tag == TaskTag.TASK:
-            options.update(domain_config)
-            options.update(ip_config)
-            options.update(site_config)
-
-        options.update(policy)
-        return options
-
-    def _add_task(self, target_lists, task_data):
+        task_data_list = []
         try:
-            ip_list, domain_list = self._get_ip_domain_list(target_lists)
+            if task_tag == TaskTag.TASK:
+                # 对于资产发现任务检验通过策略关联的资产组
+                related_scope_id = options.get("related_scope_id", "")
+                if related_scope_id:
+                    scope_data = get_scope_by_scope_id(scope_id=related_scope_id)
+                    if not scope_data:
+                        return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": related_scope_id})
+                    
+                    check_target_in_scope(target=target, scope_list=scope_data["scope_array"])
+
+                task_data_list = submit_task_task(target=target, name=name, options=options)
+                if not task_data_list:
+                    return utils.build_ret(ErrorMsg.TaskTargetIsEmpty, {"target": target})
+
+            if task_tag == TaskTag.RISK_CRUISING:
+                if result_set_id:
+                    query = {"_id": ObjectId(result_set_id)}
+                    item = utils.conn_db('result_set').find_one(query, {"total": 1})
+                    if not item:
+                        return utils.build_ret(ErrorMsg.ResultSetIDNotFound, {"result_set_id": result_set_id})
+
+                    target_len = item["total"]
+
+                    if target_len == 0:
+                        return utils.build_ret(ErrorMsg.ResultSetIsEmpty, {"result_set_id": result_set_id})
+
+                    options["result_set_id"] = result_set_id
+                    options["result_set_len"] = target_len
+
+                    task_data_list = submit_risk_cruising(target=target, name=name, options=options)
+                    if not task_data_list:
+                        return utils.build_ret(ErrorMsg.Error, {"result_set_id": result_set_id})
+
+                else:
+                    task_data_list = submit_risk_cruising(target=target, name=name, options=options)
+                    if not task_data_list:
+                        return utils.build_ret(ErrorMsg.TaskTargetIsEmpty, {"target": target})
         except Exception as e:
-            return utils.build_ret(str(e), {})
+            logger.exception(e)
+            return utils.build_ret(ErrorMsg.Error, {"error": str(e)})
 
-        ret_items = []
-        if domain_list:
-            submit_result = self._submit_domain_list(domain_list, task_data)
-            if isinstance(submit_result, str):
-                return utils.build_ret(ErrorMsg.Error, {"error": submit_result})
-            ret_items.extend(submit_result)
+        return utils.build_ret(ErrorMsg.Success, {"items": task_data_list})
 
-        if ip_list:
-            submit_result = self._submit_ip_list(ip_list, task_data)
-            if isinstance(submit_result, str):
-                return utils.build_ret(ErrorMsg.Error, {"error": submit_result})
-            ret_items.extend(submit_result)
 
-        if not ret_items:
-            return utils.build_ret(ErrorMsg.TaskTargetIsEmpty, {})
 
-        return utils.build_ret(ErrorMsg.Success, {"items": ret_items})
-
-    def _submit_domain_list(self, domain_list, task_data):
-        ret = []
-        for item in domain_list:
-            ret_item = {
-                "target": item,
-                "type": "domain"
-            }
-            domain_task_data = task_data.copy()
-            domain_task_data["target"] = item
-            _task_data = submit_task(domain_task_data)
-            if isinstance(_task_data, str):
-                return _task_data
-
-            ret_item["task_id"] = _task_data.get("task_id", "")
-            ret_item["celery_id"] = _task_data.get("celery_id", "")
-            ret.append(ret_item)
-        return ret
-
-    def _submit_ip_list(self, ip_list, task_data):
-        ret = []
-        ip_task_data = task_data.copy()
-        ip_task_data["target"] = " ".join(ip_list)
-        ip_task_data["type"] = "ip"
-
-        item = {
-            "target": ip_task_data["target"],
-            "type": ip_task_data["type"]
-        }
-        _task_data = submit_task(ip_task_data)
-        if isinstance(_task_data, str):
-            return _task_data
-
-        item["task_id"] = _task_data.get("task_id", "")
-        item["celery_id"] = _task_data.get("celery_id", "")
-        ret.append(item)
-        return ret
-
-    def _get_ip_domain_list(self, target_lists):
-        ip_list = set()
-        domain_list = set()
-        for item in target_lists:
-            if not item:
-                continue
-
-            if utils.is_vaild_ip_target(item):
-                if not utils.not_in_black_ips(item):
-                    raise Exception("{} 在黑名单IP中".format(item))
-                ip_list.add(item)
-
-            elif utils.domain.is_forbidden_domain(item):
-                raise Exception("{} 包含在禁止域名内".format(item))
-
-            elif utils.is_valid_domain(item):
-                domain_list.add(item)
-
-            else:
-                raise Exception("{} 无效的目标".format(item))
-
-        return ip_list, domain_list
 
 
 

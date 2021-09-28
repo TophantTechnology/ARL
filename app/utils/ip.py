@@ -93,3 +93,16 @@ def get_ip_type(ip):
     except Exception as e:
         logger.warning("{} {}".format(e, ip))
         return "ERROR"
+
+
+def ip_in_scope(ip, scope_list):
+    from . import get_logger
+    logger = get_logger()
+
+    for item in scope_list:
+        try:
+            if IP(ip) in IP(item):
+                return True
+        except Exception as e:
+            logger.warning("{} {} {}".format(e, ip, item))
+

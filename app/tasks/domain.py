@@ -113,12 +113,8 @@ class DomainBrute():
         return self.domain_info_list
 
 
-
-
-'''
-端口扫描
-'''
-class ScanPort():
+# 端口扫描
+class ScanPort(object):
     def __init__(self, domain_info_list, option):
         self.domain_info_list = domain_info_list
         self.ipv4_map = {}
@@ -128,9 +124,12 @@ class ScanPort():
 
         if option is None:
             option = {
-                "ports" : ScanPortType.TEST,
+                "ports": ScanPortType.TEST,
                 "service_detect": False,
-                "os_detect": False
+                "os_detect": False,
+                "port_parallelism": 32,
+                "port_min_rate": 64,
+                "custom_host_timeout": None
             }
 
         if 'skip_scan_cdn_ip' in option:
@@ -365,11 +364,9 @@ class AltDNS():
         return out
 
 
-
-
 class SearchEngines():
     def __init__(self, sites):
-        self.engines = [services.doge_search, services.bing_search, services.baidu_search]
+        self.engines = [services.bing_search, services.baidu_search]
         self.domain_map_site = dict()
         self.domain_map_url = dict()
         self.site_map_url = dict()
@@ -407,14 +404,12 @@ class SearchEngines():
 
         return self.site_map_url
 
-
     def work(self, domain):
         urls = []
-        engines = random.sample(self.engines, 2)
-        for engine in engines:
+        for engine in self.engines:
             try:
                 urls.extend(engine(domain))
-                urls =  utils.rm_similar_url(urls)
+                urls = utils.rm_similar_url(urls)
             except Exception as e:
                 logger.exception(e)
 
@@ -464,7 +459,7 @@ def domain_brute(base_domain, word_file = Config.DOMAIN_DICT_2W):
     return b.run()
 
 
-def scan_port(domain_info_list, option = None):
+def scan_port(domain_info_list, option=None):
     s = ScanPort(domain_info_list, option)
     return s.run()
 
@@ -555,15 +550,24 @@ class DomainTask(CommonTask):
             "test": ScanPortType.TEST,
             "top100": ScanPortType.TOP100,
             "top1000": ScanPortType.TOP1000,
-            "all": ScanPortType.ALL
+            "all": ScanPortType.ALL,
+            "custom": self.options.get("port_custom", "80,443")
         }
         option_scan_port_type = self.options.get("port_scan_type", "test")
         scan_port_option = {
             "ports": scan_port_map.get(option_scan_port_type, ScanPortType.TEST),
             "service_detect": self.options.get("service_detection", False),
             "os_detect": self.options.get("os_detection", False),
-            "skip_scan_cdn_ip": self.options.get("skip_scan_cdn_ip", False)  # 跳过扫描CDN IP
+            "skip_scan_cdn_ip": self.options.get("skip_scan_cdn_ip", False),  # 跳过扫描CDN IP
+            "port_parallelism": self.options.get("port_parallelism", 32),  # 探测报文并行度
+            "port_min_rate": self.options.get("port_min_rate", 64),  # 最少发包速率
+            "custom_host_timeout": None  # 主机超时时间(s)
         }
+
+        # 只有当设置为自定义时才会去设置超时时间
+        if self.options.get("host_timeout_type") == "custom":
+            scan_port_option["custom_host_timeout"] = self.options.get("host_timeout", 60*15)
+
         self.scan_port_option = scan_port_option
 
     @property
@@ -905,7 +909,6 @@ class DomainTask(CommonTask):
 
                 utils.conn_db('url').insert_one(item)
 
-
     def fofa_search(self):
         try:
             f = fofaSearch(self.domain_info_list, self.base_domain)
@@ -1044,13 +1047,14 @@ class DomainTask(CommonTask):
     def start_ip_fetch(self):
         self.gen_ipv4_map()
 
-        '''***佛法证书域名关联****'''
-        if self.options.get("fofa_search"):
-            self.update_task_field("status", "fofa_search")
-            t1 = time.time()
-            self.fofa_search()
-            elapse = time.time() - t1
-            self.update_services("fofa_search", elapse)
+        # 下线fofa_search 功能， 请用fofa 任务替代
+        # '''***佛法证书域名关联****'''
+        # if self.options.get("fofa_search"):
+        #     self.update_task_field("status", "fofa_search")
+        #     t1 = time.time()
+        #     self.fofa_search()
+        #     elapse = time.time() - t1
+        #     self.update_services("fofa_search", elapse)
 
         '''***端口扫描开始***'''
         if self.options.get("port_scan"):
@@ -1145,10 +1149,10 @@ class DomainTask(CommonTask):
         targets = []
         for ip_info in self.ip_info_list:
             for port_info in ip_info.port_info_list:
-                if port_info.port_id == 80:
+                skip_port_list = [80, 443, 843]
+                if port_info.port_id in skip_port_list:
                     continue
-                if port_info.port_id == 443:
-                    continue
+
                 targets.append("{}:{}".format(ip_info.ip, port_info.port_id))
 
         result = run_sniffer(targets)
@@ -1219,6 +1223,11 @@ class DomainTask(CommonTask):
 
         # 任务结果统计
         self.insert_task_stat()
+        # 任务指纹信息统计
+        self.insert_finger_stat()
+
+        # 进行资产同步
+        self.sync_asset()
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())
@@ -1234,39 +1243,7 @@ def domain_task(base_domain, task_id, options):
         d.update_task_field("end_time", utils.curr_date())
 
 
-def add_domain_to_scope(domain, scope_id):
-    task_data = {
-        'name': '添加域名',
-        'target': domain,
-        'start_time': '-',
-        'status': 'waiting',
-        'type': 'domain',
-        "task_tag": "task",
-        'options': {
-            'domain_brute': True,
-            'domain_brute_type': 'test',
-            'port_scan_type': 'test',
-            'port_scan': True,
-            'service_detection': False,
-            'service_brute': False,
-            'os_detection': False,
-            'site_identify': True,
-            'site_capture': False,
-            'file_leak': False,
-            'alt_dns': False,
-            'site_spider': False,
-            'search_engines': False,
-            'ssl_cert': False,
-            'fofa_search': False,
-            'crtsh_search': True
-        }
-    }
 
-    utils.conn_db('task').insert_one(task_data)
-    task_id = str(task_data.pop("_id"))
-
-    domain_task(domain, task_id, task_data["options"])
-    services.sync_asset(task_id=task_id, scope_id=scope_id)
 
 
 

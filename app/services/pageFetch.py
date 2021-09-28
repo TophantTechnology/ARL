@@ -21,7 +21,6 @@ class PageFetch(BaseThread):
 
         self.page_map[site] = data
 
-
     def run(self):
         t1 = time.time()
         logger.info("start PageFetch {}".format(len(self.targets)))
