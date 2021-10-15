@@ -19,18 +19,26 @@
 由于自动资产发现过程中会有大量的的发包，建议采用云服务器可以带来更好的体验。  
 
 ### Docker 启动
-拉取镜像
 
-```
-docker pull tophant/arl
-```
-
-docker-compose 启动
 ```
 git clone https://github.com/TophantTechnology/ARL
 cd ARL/docker/
+docker volume create arl_db
+docker-compose pull
 docker-compose up -d 
 ```
+
+或者直接下载`docker-compose`配置文件启动
+```
+mkdir docker_arl
+wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.4.1/docker.zip
+cd docker_arl
+unzip -o docker.zip
+docker-compose pull
+docker volume create arl_db
+docker-compose up -d
+```
+
 详细说明可以参考: [Docker 环境安装 ARL](https://github.com/TophantTechnology/ARL/wiki/Docker-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85-ARL)
 
 ### 截图
