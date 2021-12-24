@@ -36,6 +36,8 @@ def get_ip_domain_list(target):
         elif utils.is_valid_domain(item):
             domain_list.add(item)
 
+        elif utils.is_valid_fuzz_domain(item):
+            domain_list.add(item)
         else:
             raise Exception("{} 无效的目标".format(item))
 
@@ -106,17 +108,23 @@ def submit_task(task_data):
     task_id = str(task_data.pop("_id"))
     task_data["task_id"] = task_id
 
+    celery_action = ""
     type_map_action = {
         TaskType.DOMAIN: CeleryAction.DOMAIN_TASK,
         TaskType.IP: CeleryAction.IP_TASK,
         TaskType.RISK_CRUISING: CeleryAction.RUN_RISK_CRUISING,
-        TaskType.ASSET_SITE_UPDATE: CeleryAction.ASSET_SITE_UPDATE
+        TaskType.ASSET_SITE_UPDATE: CeleryAction.ASSET_SITE_UPDATE,
+        TaskType.FOFA: CeleryAction.FOFA_TASK
     }
 
     task_type = task_data["type"]
+    if task_type in type_map_action:
+        celery_action = type_map_action[task_type]
+
+    assert celery_action
 
     task_options = {
-        "celery_action": type_map_action[task_type],
+        "celery_action": celery_action,
         "data": task_data
     }
 
@@ -188,3 +196,48 @@ def submit_risk_cruising(target, name, options):
     task_data_list.append(task_data)
 
     return task_data_list
+
+
+def get_task_data(task_id):
+    task_data = utils.conn_db('task').find_one({'_id': bson.ObjectId(task_id)})
+    return task_data
+
+
+def restart_task(task_id):
+    name_pre = "重新运行-"
+    task_data = get_task_data(task_id)
+    if not task_data:
+        raise Exception("没有找到 task_id : {}".format(task_id))
+
+    # 把一些基础字段初始化
+    task_data.pop("_id")
+    task_data["start_time"] = "-"
+    task_data["status"] = TaskStatus.WAITING
+    task_data["end_time"] = "-"
+    task_data["service"] = []
+    task_data["celery_id"] = ""
+    if "statistic" in task_data:
+        task_data.pop("statistic")
+
+    name = task_data["name"]
+    if name_pre not in name:
+        task_data["name"] = name_pre + name
+
+    task_type = task_data["type"]
+    task_tag = task_data.get("task_tag", "")
+
+    # 特殊情况单独判断
+    if task_type == TaskType.RISK_CRUISING and task_tag == TaskTag.RISK_CRUISING:
+        if task_data.get("result_set_id"):
+            raise Exception("task_id : {}, 不支持该任务重新运行".format(task_id))
+
+    # 监控任务的重新下发有点麻烦
+    if task_type == TaskType.DOMAIN and task_tag == TaskTag.MONITOR:
+        raise Exception("task_id : {}, 不支持该任务重新运行".format(task_id))
+
+    elif task_type == TaskType.IP and task_data["options"].get("scope_id"):
+        raise Exception("task_id : {}, 不支持该任务重新运行".format(task_id))
+
+    submit_task(task_data)
+
+    return task_data

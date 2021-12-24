@@ -519,6 +519,7 @@ ftp.tgz
 ftp.zip
 fuck.php
 ganglia/
+gateway
 gateway/globalfilters
 gateway/routefilters
 gateway/routes
@@ -550,6 +551,7 @@ httpd.conf
 hub
 hystrix.stream
 i.php
+iam
 ibm/console/logon.jsp
 id_dsa
 id_rsa
@@ -684,6 +686,7 @@ nomad
 npm-debug.log
 o.tar.gz
 oa
+oauth
 old
 old.7z
 old.gz
@@ -1062,6 +1065,7 @@ website.tar.gz
 website.tgz
 website.war
 website.zip
+webtools
 weixin.rar
 weixin.tar.gz
 weixin.zip

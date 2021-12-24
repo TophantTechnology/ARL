@@ -1,6 +1,7 @@
 import unittest
 from app import services
 from app.utils import push
+from app.config import Config
 
 
 class TestUtilsPush(unittest.TestCase):
@@ -45,7 +46,16 @@ class TestUtilsPush(unittest.TestCase):
 
         return self._ip_data
 
+    def assert_dingding_config(self):
+        self.assertTrue(Config.DINGDING_SECRET)
+        self.assertTrue(Config.DINGDING_ACCESS_TOKEN)
+
+    def assert_email_config(self):
+        self.assertTrue(Config.EMAIL_PASSWORD)
+        self.assertTrue(Config.EMAIL_USERNAME)
+
     def test_message_push_domain(self):
+        self.assert_dingding_config()
         asset_map = {
             "site": self.site_data,
             "domain": self.domain_data,
@@ -60,6 +70,8 @@ class TestUtilsPush(unittest.TestCase):
         self.assertTrue(ret)
 
     def test_message_push_ip(self):
+        self.assert_dingding_config()
+
         asset_map = {
             "site": self.site_data,
             "ip": self.ip_data,
@@ -74,6 +86,7 @@ class TestUtilsPush(unittest.TestCase):
         self.assertTrue(ret)
 
     def test_push_email_domain(self):
+        self.assert_email_config()
         asset_map = {
             "site": self.site_data,
             "domain": self.domain_data,
@@ -89,6 +102,8 @@ class TestUtilsPush(unittest.TestCase):
         self.assertTrue(ret)
 
     def test_push_email_ip(self):
+        self.assert_email_config()
+
         asset_map = {
             "site": self.site_data,
             "ip": self.ip_data,

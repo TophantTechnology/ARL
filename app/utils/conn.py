@@ -6,7 +6,7 @@ import requests
 
 from app.config import Config
 
-UA = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+UA = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"
 
 
 proxies = {
@@ -16,20 +16,25 @@ proxies = {
 
 SET_PROXY = False
 
-def http_req(url, method = 'get', **kwargs):
+
+def http_req(url, method='get', **kwargs):
     kwargs.setdefault('verify', False)
     kwargs.setdefault('timeout', (10.1, 30.1))
     kwargs.setdefault('allow_redirects', False)
 
     headers = kwargs.get("headers", {})
     headers.setdefault("User-Agent", UA)
+    # 不允许缓存
+    headers.setdefault("Cache-Control", "max-age=0")
 
     kwargs["headers"] = headers
 
-    if SET_PROXY:
+    if Config.PROXY_URL:
+        proxies['https'] = Config.PROXY_URL
+        proxies['http'] = Config.PROXY_URL
         kwargs["proxies"] = proxies
 
-    conn =   getattr(requests, method)(url, **kwargs)
+    conn = getattr(requests, method)(url, **kwargs)
 
     return conn
 

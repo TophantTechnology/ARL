@@ -102,6 +102,9 @@ class AddARLPolicy(ARLResource):
     @auth
     @ns.expect(add_policy_fields)
     def post(self):
+        """
+        策略添加
+        """
         args = self.parse_args(add_policy_fields)
         name = args.pop("name")
         policy = args.pop("policy", {})

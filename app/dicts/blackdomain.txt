@@ -25,3 +25,6 @@
 .o.qcloud.com
 .mur.qq.com
 .waf.taobao.com
+.vs.tencent.com
+.dev.tencent.com
+media.gamer.qq.com

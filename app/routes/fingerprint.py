@@ -1,3 +1,8 @@
+import json
+import time
+import werkzeug
+from urllib.parse import quote
+from flask import make_response
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from bson import ObjectId
 from app.utils import get_logger, auth, parse_human_rule, transform_rule_map
@@ -90,3 +95,92 @@ class DeleteARLFinger(ARLResource):
             utils.conn_db('fingerprint').delete_one(query)
 
         return utils.build_ret(ErrorMsg.Success, {'_id': id_list})
+
+
+@ns.route('/export/')
+class ExportARLFinger(ARLResource):
+
+    @auth
+    def get(self):
+        """
+        指纹导出
+        """
+        items = []
+        results = list(utils.conn_db('fingerprint').find())
+        for result in results:
+            item = dict()
+            item["rule"] = result["rule"]
+            item["name"] = result["name"]
+            items.append(item)
+
+        data = json.dumps(items, indent=4, ensure_ascii=False)
+        response = make_response(data)
+        filename = "fingerprint_{}_{}.json".format(len(items), int(time.time()))
+        response.headers['Content-Type'] = 'application/octet-stream'
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        response.headers["Content-Disposition"] = "attachment; filename={}".format(quote(filename))
+
+        return response
+
+
+file_upload = reqparse.RequestParser()
+file_upload.add_argument('file',
+                         type=werkzeug.datastructures.FileStorage,
+                         location='files',
+                         required=True,
+                         help='JSON file')
+
+
+@ns.route('/upload/')
+class UploadARLFinger(ARLResource):
+
+    @auth
+    @ns.expect(file_upload)
+    def post(self):
+        """
+        指纹上传
+        """
+        args = file_upload.parse_args()
+        file_data = args['file'].read()
+        try:
+            obj = json.loads(file_data)
+            if not isinstance(obj, list):
+                return utils.build_ret(ErrorMsg.Error, {'msg': "not list obj"})
+
+            error_cnt = 0
+            success_cnt = 0
+            repeat_cnt = 0
+
+            for rule in obj:
+                human_rule = transform_rule_map(rule['rule'])
+                rule_name = rule['name']
+                if not human_rule:
+                    error_cnt += 1
+                    continue
+
+                result = utils.conn_db('fingerprint').find_one({"human_rule": human_rule})
+                if result:
+                    repeat_cnt += 1
+                    continue
+
+                rule_map = parse_human_rule(human_rule)
+                if rule_map is None:
+                    error_cnt += 1
+                    continue
+
+                data = {
+                    "name": rule_name,
+                    "rule": rule_map,
+                    "human_rule": human_rule,
+                    "update_date": utils.curr_date_obj()
+                }
+                success_cnt += 1
+
+                utils.conn_db('fingerprint').insert_one(data)
+
+            return utils.build_ret(ErrorMsg.Success, {'error_cnt': error_cnt,
+                                                      'repeat_cnt': repeat_cnt,'success_cnt': success_cnt})
+        except Exception as e:
+            return utils.build_ret(ErrorMsg.Error, {'msg': str(e)})
+
+

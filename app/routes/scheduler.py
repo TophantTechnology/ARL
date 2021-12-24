@@ -6,6 +6,7 @@ from . import base_query_fields, ARLResource, get_arl_parser
 from app import scheduler as app_scheduler, utils
 from app.modules import SchedulerStatus, AssetScopeType, TaskTag
 from app.helpers import get_options_by_policy_id
+from app.helpers.scheduler import have_same_site_update_monitor
 
 ns = Namespace('scheduler', description="资产监控任务信息")
 
@@ -160,6 +161,7 @@ recover_scheduler_fields = ns.model('recoverScheduler',  {
 })
 
 
+# 下面有个批量恢复的，这个接口后面再删除
 @ns.route('/recover/')
 class RecoverARLScheduler(ARLResource):
 
@@ -185,11 +187,42 @@ class RecoverARLScheduler(ARLResource):
         return utils.build_ret(ErrorMsg.Success, {"job_id": job_id})
 
 
+batch_recover_scheduler_fields = ns.model('batchRecoverScheduler',  {
+    "job_id": fields.List(fields.String(required=True, description="监控任务ID列表"))
+})
+
+
+@ns.route('/recover/batch')
+class BatchRecoverARLScheduler(ARLResource):
+
+    @auth
+    @ns.expect(batch_recover_scheduler_fields)
+    def post(self):
+        """
+        批量恢复监控周期任务
+        """
+        args = self.parse_args(batch_recover_scheduler_fields)
+        job_id_list = args.get("job_id", [])
+        for job_id in job_id_list:
+            item = app_scheduler.find_job(job_id)
+            if not item:
+                return utils.build_ret(ErrorMsg.JobNotFound, {"job_id": job_id})
+
+            status = item.get("status", SchedulerStatus.RUNNING)
+            if status != SchedulerStatus.STOP:
+                return utils.build_ret(ErrorMsg.SchedulerStatusNotStop, {"job_id": job_id})
+
+            app_scheduler.recover_job(job_id)
+
+        return utils.build_ret(ErrorMsg.Success, {"job_id": job_id_list})
+
+
 stop_scheduler_fields = ns.model('stopScheduler',  {
     "job_id": fields.String(required=True, description="监控任务ID")
 })
 
 
+# 下面有个批量停止的，这个接口后面再删除
 @ns.route('/stop/')
 class StopARLScheduler(ARLResource):
 
@@ -213,6 +246,36 @@ class StopARLScheduler(ARLResource):
         app_scheduler.stop_job(job_id)
 
         return utils.build_ret(ErrorMsg.Success, {"job_id": job_id})
+
+
+batch_stop_scheduler_fields = ns.model('batchStopScheduler',  {
+    "job_id": fields.List(fields.String(required=True, description="监控任务ID列表"))
+})
+
+
+@ns.route('/stop/batch')
+class BatchStopARLScheduler(ARLResource):
+
+    @auth
+    @ns.expect(batch_stop_scheduler_fields)
+    def post(self):
+        """
+        停止监控周期任务
+        """
+        args = self.parse_args(batch_stop_scheduler_fields)
+        job_id_list = args.get("job_id", [])
+        for job_id in job_id_list:
+            item = app_scheduler.find_job(job_id)
+            if not item:
+                return utils.build_ret(ErrorMsg.JobNotFound, {"job_id": job_id})
+
+            status = item.get("status", SchedulerStatus.RUNNING)
+            if status != SchedulerStatus.RUNNING:
+                return utils.build_ret(ErrorMsg.SchedulerStatusNotRunning, {"job_id": job_id})
+
+            app_scheduler.stop_job(job_id)
+
+        return utils.build_ret(ErrorMsg.Success, {"job_id": job_id_list})
 
 
 add_scheduler_site_fields = ns.model('addSchedulerSite',  {
@@ -243,6 +306,10 @@ class AddSiteScheduler(ARLResource):
 
         if not scope_data:
             return utils.build_ret(ErrorMsg.NotFoundScopeID, {"scope_id": scope_id})
+
+        if have_same_site_update_monitor(scope_id=scope_id):
+            return utils.build_ret(ErrorMsg.DomainSiteViaJob, {"scope_id": scope_id,
+                                                               "scope_name": scope_data['name']})
 
         if not name:
             name = "站点监控-{}".format(scope_data["name"])

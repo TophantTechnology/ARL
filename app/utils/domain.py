@@ -4,7 +4,11 @@ from app.config import Config
 blackdomain_list = None
 blackhexie_list = None
 
+
 def check_domain_black(domain):
+    from app.utils import get_logger
+    logger = get_logger()
+
     global blackdomain_list
     global blackhexie_list
     if blackdomain_list is None:
@@ -20,12 +24,15 @@ def check_domain_black(domain):
         with open(Config.black_heixie_path) as f:
             blackhexie_list = f.readlines()
 
-
-    for item in blackhexie_list:
-        item = item.strip()
-        _, _, subdomain = tld.parse_tld(domain, fix_protocol=True, fail_silently=True)
-        if subdomain and  item and  item.strip() in subdomain:
-            return True
+    try:
+        for item in blackhexie_list:
+            item = item.strip()
+            _, _, subdomain = tld.parse_tld(domain, fix_protocol=True, fail_silently=True)
+            if subdomain and item and item.strip() in subdomain:
+                return True
+    except Exception as e:
+        logger.warning("Error on: {}, {}".format(domain, e))
+        return True
 
     return False
 
@@ -47,6 +54,9 @@ def is_valid_domain(domain):
     if ":" in domain:
         return False
 
+    if "_" in domain:
+        return False
+
     # 不允许下发特殊二级域名
     if domain in ["com.cn", "gov.cn", "edu.cn"]:
         return False
@@ -55,6 +65,22 @@ def is_valid_domain(domain):
         return True
 
     return False
+
+
+def is_valid_fuzz_domain(domain):
+    from app.utils import domain_parsed
+    if "{fuzz}" not in domain:
+        return False
+
+    domain = domain.replace("{fuzz}", "12fuzz12")
+    parsed = domain_parsed(domain)
+    if not parsed:
+        return False
+
+    if "12fuzz12" in parsed['fld']:
+        return False
+
+    return True
 
 
 def is_in_scope(src_domain, target_domain):

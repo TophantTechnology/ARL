@@ -158,7 +158,7 @@ class GithubTaskMonitor(GithubTaskTask):
                                                                         len(repo_map.keys()), len(self.new_results))
         for repo_name in repo_map:
             repo_cnt += 1
-            # 为了较少长度，超过 5 个参考就跳过
+            # 为了较少长度，超过 5 个仓库就跳过
             if repo_cnt > 5:
                 break
 
@@ -167,23 +167,31 @@ class GithubTaskMonitor(GithubTaskTask):
             table_start = '''<table style="border-collapse: collapse;">
             <thead>
                 <tr>
-                    <th style="border: 0.5pt solid;">编号</th>
-                    <th style="border: 0.5pt solid;">文件名</th>
-                    <th style="border: 0.5pt solid;">代码</th>
+                    <th style="border: 0.5pt solid; padding:14px;">编号</th>
+                    <th style="border: 0.5pt solid; padding:14px;">文件名</th>
+                    <th style="border: 0.5pt solid; padding:14px;">代码</th>
+                    <th style="border: 0.5pt solid; padding:14px;">Commit 时间</th>
                 </tr>
             </thead>
             <tbody>\n'''
             html += start_div
             html += table_start
 
-            style = 'style="border: 0.5pt solid; font-size: 14px;"'
+            style = 'style="border: 0.5pt solid; font-size: 14px; padding:14px"'
             tr_cnt = 0
             for item in repo_map[repo_name]:
                 tr_cnt += 1
                 code_content = item.human_content(self.keyword).replace('>', "&#x3e;").replace('<', "&#x3c;")
-                tr_tag = '<tr><td {}> {} </td><td {}> <a href="{}">{}</a> </td><td {}>' \
-                         '<pre>{}</pre></td></tr>\n'.format(
-                    style, tr_cnt, style, item.html_url, item.path, style, code_content)
+                code_content = code_content[:2000]
+                tr_tag = '<tr>' \
+                         '<td {}> {} </td>' \
+                         '<td {}> <div style="width: 300px"> <a href="{}"> {} </a> </div> </td>' \
+                         '<td {}> <pre style="max-width: 600px; overflow: auto; max-height: 600px;">{}</pre></td>' \
+                         '<td {}> {} </td>' \
+                         '</tr>\n'.format(
+                    style, tr_cnt, style, item.html_url, item.path,
+                    style, code_content,
+                    style, item.commit_date)
 
                 html += tr_tag
                 if tr_cnt > 10:
@@ -230,7 +238,7 @@ class GithubTaskMonitor(GithubTaskTask):
         logger.info("found new result {} {}".format(self.keyword, len(self.new_results)))
 
         self.push_dingding()
-        #self.push_email()
+        self.push_email()
 
     def push_dingding(self):
         try:

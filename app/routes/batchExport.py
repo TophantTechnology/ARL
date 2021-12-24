@@ -124,3 +124,59 @@ class BatchExportCIP(ARLResource):
         response = self.send_batch_export_file(task_id_list, "cip")
 
         return response
+
+
+scope_batch_export_fields = ns.model('ScopeBatchExport',  {
+    "scope_id": fields.List(fields.String(description="资产分组 ID"), required=True),
+})
+
+
+@ns.route('/asset_ip/')
+class BatchExportAssetIP(ARLResource):
+
+    @auth
+    @ns.expect(scope_batch_export_fields)
+    def post(self):
+        """
+        资产分组中IP批量导出
+        """
+        args = self.parse_args(scope_batch_export_fields)
+        scope_id_list = args.get("scope_id", [])
+
+        response = self.send_scope_batch_export_file(scope_id_list, "asset_ip")
+
+        return response
+
+
+@ns.route('/asset_domain/')
+class BatchExportAssetIP(ARLResource):
+
+    @auth
+    @ns.expect(scope_batch_export_fields)
+    def post(self):
+        """
+        资产分组中域名批量导出
+        """
+        args = self.parse_args(scope_batch_export_fields)
+        scope_id_list = args.get("scope_id", [])
+
+        response = self.send_scope_batch_export_file(scope_id_list, "asset_domain")
+
+        return response
+
+
+@ns.route('/asset_site/')
+class BatchExportAssetIP(ARLResource):
+
+    @auth
+    @ns.expect(scope_batch_export_fields)
+    def post(self):
+        """
+        资产分组中站点批量导出
+        """
+        args = self.parse_args(scope_batch_export_fields)
+        scope_id_list = args.get("scope_id", [])
+
+        response = self.send_scope_batch_export_file(scope_id_list, "asset_site")
+
+        return response

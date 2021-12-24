@@ -7,6 +7,8 @@ class TestGithubSearch(unittest.TestCase):
         keyword = "1588080585"
         results = github_search(keyword)
         self.assertTrue(len(results) >= 1)
+        result = results[0]
+        self.assertTrue(result.commit_date)
 
 
 if __name__ == '__main__':

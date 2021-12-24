@@ -29,7 +29,9 @@ def create_index():
         "vuln": "task_id",
         "asset_ip": "scope_id",
         "asset_site": "scope_id",
-        "asset_domain": "scope_id"
+        "asset_domain": "scope_id",
+        "github_result": "github_task_id",
+        "github_monitor_result": "github_scheduler_id"
     }
     for table in index_map:
         conn_db(table).create_index(index_map[table])

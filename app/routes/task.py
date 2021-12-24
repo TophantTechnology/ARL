@@ -9,7 +9,7 @@ from app import utils
 from app.modules import TaskStatus, ErrorMsg, TaskSyncStatus, CeleryAction, TaskTag, TaskType
 from app.helpers import get_options_by_policy_id, submit_task_task,\
     submit_risk_cruising, get_scope_by_scope_id, check_target_in_scope
-
+from app.helpers.task import get_task_data, restart_task
 
 ns = Namespace('task', description="资产发现任务信息")
 
@@ -38,7 +38,8 @@ base_search_task_fields = {
     'options.riskiq_search': fields.Boolean(description="是否开启 Riskiq 调用"),
     'options.arl_search': fields.Boolean(description="是否开启 ARL 历史查询"),
     'options.crtsh_search': fields.Boolean(description="是否开启 crt.sh 查询"),
-    'options.skip_scan_cdn_ip': fields.Boolean(description="是否跳过CDN IP端口扫描")
+    'options.skip_scan_cdn_ip': fields.Boolean(description="是否跳过CDN IP端口扫描"),
+    'options.findvhost': fields.Boolean(description="是否开启Host碰撞检测")
 
 }
 
@@ -68,7 +69,8 @@ add_task_fields = ns.model('AddTask', {
     "ssl_cert": fields.Boolean(),
     "fetch_api_path": fields.Boolean(),
     "crtsh_search": fields.Boolean(example=True, default=True),
-    "skip_scan_cdn_ip": fields.Boolean()
+    "skip_scan_cdn_ip": fields.Boolean(),
+    "findvhost": fields.Boolean()
 })
 
 
@@ -391,8 +393,38 @@ class TaskByPolicy(ARLResource):
         return utils.build_ret(ErrorMsg.Success, {"items": task_data_list})
 
 
+restart_task_fields = ns.model('DeleteTask',  {
+    'task_id': fields.List(fields.String(required=True, description="任务ID"))
+})
 
 
+# ******* 重新下发任务功能 *********
+@ns.route('/restart/')
+class TaskRestart(ARLResource):
+    @auth
+    @ns.expect(restart_task_fields)
+    def post(self):
+        """
+        任务重启
+        """
+        done_status = [TaskStatus.DONE, TaskStatus.STOP, TaskStatus.ERROR]
+        args = self.parse_args(restart_task_fields)
+        task_id_list = args.pop('task_id')
 
+        try:
+            for task_id in task_id_list:
+                task_data = get_task_data(task_id)
+                if not task_data:
+                    return utils.build_ret(ErrorMsg.NotFoundTask, {"task_id": task_id})
+
+                if task_data["status"] not in done_status:
+                    return utils.build_ret(ErrorMsg.TaskIsRunning, {"task_id": task_id})
+
+                restart_task(task_id)
+
+        except Exception as e:
+            return utils.build_ret(ErrorMsg.Error, {"error": str(e)})
+
+        return utils.build_ret(ErrorMsg.Success, {"task_id": task_id_list})
 
 

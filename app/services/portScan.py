@@ -10,8 +10,9 @@ class PortScan:
                  port_parallelism=None, port_min_rate=None, custom_host_timeout=None):
         self.targets = " ".join(targets)
         self.ports = ports
+        self.max_hostgroup = 20
         self.alive_port = "22,80,443,843,3389,8007-8011,8443,9090,8080-8091,8093,8099,5000-5004,2222,3306,1433,21,25"
-        self.nmap_arguments = "-sS -n --open --defeat-rst-ratelimit"
+        self.nmap_arguments = "-sS -n --open"
         self.max_retries = 3
         self.host_timeout = 60*5
         self.parallelism = port_parallelism  # 默认 32
@@ -33,13 +34,18 @@ class PortScan:
                 self.nmap_arguments += " -Pn"
 
         if self.ports == "0-65535":
+            self.max_hostgroup = 1
+            # 大概是680kb/s ,再小就太慢了。 大概1分钟时间
+            self.min_rate = max(self.min_rate, 2000)
+
             self.nmap_arguments += " -PE -PS{}".format(self.alive_port)
-            self.host_timeout += 60 * 20
+            self.host_timeout += 60 * 2
             self.max_retries = 2
 
-        self.nmap_arguments += " --max-rtt-timeout 320ms  --initial-rtt-timeout 100ms"
+        self.nmap_arguments += " --max-rtt-timeout 800ms"
         self.nmap_arguments += " --min-rate {}".format(self.min_rate)
         self.nmap_arguments += " --script-timeout 6s"
+        self.nmap_arguments += " --max-hostgroup {}".format(self.max_hostgroup)
 
         # 依据传过来的超时为准
         if custom_host_timeout is not None:

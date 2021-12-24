@@ -208,6 +208,27 @@ class ARLResource(Resource):
 
         return self.send_file(items_set, _type)
 
+    def send_scope_batch_export_file(self, scope_id_list,  _type):
+        _type_map_field_name = {
+            "asset_site": "site",
+            "asset_domain": "domain",
+            "asset_ip": "ip"
+        }
+
+        items_set = set()
+        filed_name = _type_map_field_name.get(_type, "")
+
+        for scope_id in scope_id_list:
+            if not filed_name:
+                continue
+            if not scope_id:
+                continue
+            query = {"scope_id": scope_id}
+            items = conn(_type).distinct(filed_name, query)
+            items_set |= set(items)
+
+        return self.send_file(items_set, _type)
+
     def send_file(self, items_set, _type):
         response = make_response("\r\n".join(items_set))
         filename = "{}_{}_{}.txt".format(_type, len(items_set), int(time.time()))
@@ -215,6 +236,7 @@ class ARLResource(Resource):
         response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
         response.headers["Content-Disposition"] = "attachment; filename={}".format(quote(filename))
         return response
+
 
 def get_arl_parser(model, location='args'):
     r = ARLResource()

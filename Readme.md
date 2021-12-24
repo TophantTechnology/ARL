@@ -13,6 +13,19 @@
 
 在开始使用之前，请务必阅读并同意[免责声明](Disclaimer.md)中的条款，否则请勿下载安装使用本系统。
 
+### 特性
+1. 域名资产发现和整理
+2. IP/IP 段资产整理
+3. 端口扫描和服务识别
+4. WEB 站点指纹识别
+5. 资产分组管理和搜索
+6. 任务策略配置
+7. 计划任务和周期任务
+8. Github 关键字监控
+9. 域名/IP 资产监控
+10. 站点变化监控
+11. 文件泄漏等风险检测
+
 ### 系统要求
 
 目前暂不支持Windows。Linux和MAC建议采用Docker运行，系统配置最低2核4G。  
@@ -31,7 +44,7 @@ docker-compose up -d
 或者直接下载`docker-compose`配置文件启动
 ```
 mkdir docker_arl
-wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.4.1/docker.zip
+wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.5/docker.zip
 cd docker_arl
 unzip -o docker.zip
 docker-compose pull
@@ -95,7 +108,7 @@ docker-compose up -d
 | 16   | 站点爬虫        | 利用静态爬虫对站点进行爬取对应的URL                                                  |
 | 17   | 站点截图        | 对站点首页进行截图                                                                 |
 | 18   | 文件泄露        | 对站点进行文件泄露检测，会被WAF拦截                                                  |
-
+| 19   | Host 碰撞        | 对vhost配置不当进行检测                                                |
 
 ### 配置参数说明
 
@@ -117,6 +130,9 @@ Docker环境配置文件路径 `docker/config-docker.yaml`
 | ARL.PORT_TOP_10     | 自定义端口，对应前端端口测试选项      |
 | ARL.DOMAIN_DICT     | 域名爆破字典，对应前端大字典选项      |
 | ARL.FILE_LEAK_DICT     | 文件泄漏字典      |
+| ARL.DOMAIN_BRUTE_CONCURRENT     | 域名爆破并发数配置      |
+| ARL.ALT_DNS_CONCURRENT     | 组合生成的域名爆破并发数      |
+| PROXY.HTTP_URL     | HTTP代理URL设置      |
 
 
 

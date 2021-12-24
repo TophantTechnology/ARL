@@ -13,10 +13,13 @@ from app.utils.fingerprint import load_fingerprint, fetch_fingerprint
 
 
 class FetchSite(BaseThread):
-    def __init__(self, sites, concurrency=6):
+    def __init__(self, sites, concurrency=6, http_timeout=None):
         super().__init__(sites, concurrency)
         self.site_info_list = []
         self.fingerprint_list = load_fingerprint()
+        self.http_timeout = http_timeout
+        if http_timeout is None:
+            self.http_timeout = (10.1, 30.1)
 
     def fetch_fingerprint(self, item, content):
         favicon_hash = item["favicon"].get("hash", 0)
@@ -42,7 +45,7 @@ class FetchSite(BaseThread):
     def work(self, site):
         _, hostname, _ = get_host(site)
 
-        conn = utils.http_req(site)
+        conn = utils.http_req(site, timeout=self.http_timeout)
         item = {
             "site": site,
             "hostname": hostname,
@@ -94,8 +97,8 @@ def fetch_favicon(url):
     return f.run()
 
 
-def fetch_site(sites, concurrency=15):
-    f = FetchSite(sites, concurrency=concurrency)
+def fetch_site(sites, concurrency=15, http_timeout=None):
+    f = FetchSite(sites, concurrency=concurrency, http_timeout=http_timeout)
     return f.run()
 
 

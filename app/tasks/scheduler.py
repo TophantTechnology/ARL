@@ -213,6 +213,7 @@ class IPExecutor(IPTask):
             'end_time': '-',
             'status': TaskStatus.WAITING,
             'type': 'ip',
+            'task_tag': 'monitor',  # 标记为监控任务
             'options': {
                 "port_scan_type": "test",
                 "port_scan": True,

@@ -12,6 +12,9 @@ from app.modules import ScanPortType, DomainDictType, CollectSource, TaskStatus
 from app.services import fetchCert, run_risk_cruising, run_sniffer
 from app.services.commonTask import CommonTask
 from bson.objectid import ObjectId
+from app.helpers.domain import find_private_domain_by_task_id, find_public_ip_by_task_id
+from app.services.findVhost import find_vhost
+
 '''
 域名爆破
 '''
@@ -1013,6 +1016,9 @@ class DomainTask(CommonTask):
                 self.domain_info_list.append(domain_info)
                 self.save_domain_info_list([domain_info])
 
+        if "{fuzz}" in self.base_domain:
+            return
+
         # ***RiskIQ查询****
         if self.options.get("riskiq_search") and services.riskiq_quota() > 0:
             self.update_task_field("status", "riskiq_search")
@@ -1206,6 +1212,37 @@ class DomainTask(CommonTask):
             item["save_date"] = utils.curr_date()
             utils.conn_db('vuln').insert_one(item)
 
+    def find_vhost_vuln(self):
+        domains = find_private_domain_by_task_id(self.task_id)
+        if not domains:
+            return
+
+        ips = find_public_ip_by_task_id(self.task_id)
+        results = find_vhost(ips=ips, domains=domains)
+        for result in results:
+            save_item = dict()
+            save_item["plg_name"] = "FindVhost"
+            save_item["plg_type"] = "scan"
+            save_item["vul_name"] = "发现Host碰撞漏洞"
+            save_item["app_name"] = "web"
+            save_item["target"] = result["url"]
+            save_item["verify_data"] = "{}-{}-{}-{}".format(result["domain"],
+                                                        result["title"],
+                                                        result["status_code"],
+                                                        result["body_length"])
+            save_item["verify_obj"] = result
+            save_item["task_id"] = self.task_id
+            save_item["save_date"] = utils.curr_date()
+            utils.conn_db('vuln').insert_one(save_item)
+
+    def start_find_vhost(self):
+        if self.options.get("findvhost"):
+            self.update_task_field("status", "findvhost")
+            t1 = time.time()
+            self.find_vhost_vuln()
+            elapse = time.time() - t1
+            self.update_services("findvhost", elapse)
+
     def run(self):
 
         self.update_task_field("start_time", utils.curr_date())
@@ -1215,6 +1252,8 @@ class DomainTask(CommonTask):
         self.start_ip_fetch()
 
         self.start_site_fetch()
+
+        self.start_find_vhost()
 
         self.start_poc_run()
 
