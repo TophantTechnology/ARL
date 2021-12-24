@@ -29,6 +29,7 @@ class Config(object):
 
     black_domain_path = os.path.join(basedir, 'dicts/blackdomain.txt')
     black_heixie_path = os.path.join(basedir, 'dicts/blackheixie.txt')
+    black_asset_site = os.path.join(basedir, 'dicts/black_asset_site.txt')
     altdns_dict_path = os.path.join(basedir, 'dicts/altdnsdict.txt')
 
     web_app_rule = os.path.join(basedir, 'dicts/webapp.json')
@@ -72,6 +73,14 @@ class Config(object):
     GITHUB_TOKEN = ""
     GITHUB_HASH_FILE = os.path.join(TMP_PATH, 'github.hash')
 
+    # 域名爆破并发数
+    DOMAIN_BRUTE_CONCURRENT = 300
+    # 组合生成的域名爆破并发数
+    ALT_DNS_CONCURRENT = 1500
+
+    # 代理地址
+    PROXY_URL = ""
+
 
 try:
     with open(os.path.join(basedir, 'config.yaml')) as f:
@@ -112,9 +121,19 @@ try:
         else:
             print("Warning {} is not file".format(domain_dict))
 
-    if y["ARL"].get("FORBIDDEN_DOMAINS"):
-        Config.FORBIDDEN_DOMAINS = y["ARL"]["FORBIDDEN_DOMAINS"]
+    # *** 禁止域名配置 ***
+    forbidden_domains = y["ARL"].get("FORBIDDEN_DOMAINS")
+    if forbidden_domains is None:
+        pass
+    else:
+        Config.FORBIDDEN_DOMAINS = []
+        if not isinstance(forbidden_domains, list):
+            print("arl.forbidden_domains is not list")
+            sys.exit(-1)
+        elif forbidden_domains:
+            Config.FORBIDDEN_DOMAINS = forbidden_domains
 
+    # *** 钉钉配置 ***
     if y.get("DINGDING"):
         if y["DINGDING"].get("SECRET"):
             Config.DINGDING_SECRET = y["DINGDING"]["SECRET"]
@@ -122,6 +141,7 @@ try:
         if y["DINGDING"].get("ACCESS_TOKEN"):
             Config.DINGDING_ACCESS_TOKEN = y["DINGDING"]["ACCESS_TOKEN"]
 
+    # *** 邮箱配置 ***
     if y.get("EMAIL"):
         if y["EMAIL"].get("HOST"):
             Config.EMAIL_HOST = y["EMAIL"]["HOST"]
@@ -138,9 +158,27 @@ try:
         if y["EMAIL"].get("TO"):
             Config.EMAIL_TO = y["EMAIL"]["TO"]
 
+    # *** GITHUB TOKEN 配置 ***
     if y.get("GITHUB"):
         if y["GITHUB"].get("TOKEN"):
             Config.GITHUB_TOKEN = y["GITHUB"]["TOKEN"]
+
+    # *** 域名爆破并发数 ***
+    domain_concurrent = y["ARL"].get("DOMAIN_BRUTE_CONCURRENT")
+    if domain_concurrent:
+        int(domain_concurrent)
+        Config.DOMAIN_BRUTE_CONCURRENT = domain_concurrent
+
+    # *** 组合生成的域名爆破并发数 ***
+    alt_dns_concurrent = y["ARL"].get("ALT_DNS_CONCURRENT")
+    if alt_dns_concurrent:
+        int(alt_dns_concurrent)
+        Config.ALT_DNS_CONCURRENT = alt_dns_concurrent
+
+    # *** 代理配置 ***
+    if y.get("PROXY"):
+        if y["PROXY"].get("HTTP_URL"):
+            Config.PROXY_URL = y["PROXY"]["HTTP_URL"]
 
 except Exception as e:
     print("Parse config.yaml error {}".format(e))

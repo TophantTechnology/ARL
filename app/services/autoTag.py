@@ -97,6 +97,7 @@ class AutoTag:
         invalid_title.extend(["Welcome to OpenResty"])
         invalid_title.extend(["没有找到站点", "404 not found"])
         invalid_title.extend(["页面不存在", "访问拦截", "403 Forbidden"])
+        invalid_title.extend(["Page Not Found"])
         
         for t in invalid_title:
             if t in self.title:

@@ -5,6 +5,7 @@ import string
 import psutil
 import os
 import re
+import sys
 import hashlib
 from celery.utils.log import get_task_logger
 import colorlog
@@ -13,7 +14,7 @@ import dns.resolver
 from tld import get_tld
 from .conn import http_req, conn_db
 from .http import get_title, get_headers
-from .domain import check_domain_black, is_valid_domain, is_in_scope, is_in_scopes
+from .domain import check_domain_black, is_valid_domain, is_in_scope, is_in_scopes, is_valid_fuzz_domain
 from .ip import is_vaild_ip_target, not_in_black_ips, get_ip_asn, get_ip_city, get_ip_type
 from .arl import arl_domain, get_asset_domain_by_id
 from .time import curr_date, time2date, curr_date_obj
@@ -52,12 +53,12 @@ def check_output(cmd, **kwargs):
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
 
-
     output = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE, timeout=timeout, check=False,
                **kwargs).stdout
     return output
 
-def random_choices(k = 6):
+
+def random_choices(k=6):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=k))
 
 
@@ -78,8 +79,6 @@ def init_logger():
     logger.propagate = False
 
 
-import sys
-
 def get_logger():
     if 'celery' in sys.argv[0]:
         task_logger = get_task_logger(__name__)
@@ -89,9 +88,7 @@ def get_logger():
     if not logger.handlers:
         init_logger()
 
-    return  logging.getLogger('arlv2')
-
-
+    return logging.getLogger('arlv2')
 
 
 def get_ip(domain, log_flag = True):
@@ -114,7 +111,8 @@ def get_ip(domain, log_flag = True):
 
     return ips
 
-def get_cname(domain, log_flag = True):
+
+def get_cname(domain, log_flag=True):
     logger = get_logger()
     cnames = []
     try:
@@ -128,7 +126,6 @@ def get_cname(domain, log_flag = True):
         if log_flag:
             logger.warning("{} {}".format(domain, e))
     return cnames
-
 
 
 def domain_parsed(domain, fail_silently = True):

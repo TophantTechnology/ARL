@@ -71,6 +71,9 @@ class TaskType:
     """资产站点更新"""
     ASSET_SITE_UPDATE = "asset_site_update"
 
+    """Fofa 任务"""
+    FOFA = "fofa"
+
 
 class SiteAutoTag:
     ENTRY = "入口"
@@ -359,6 +362,10 @@ error_map = {
     "TaskScheduleNotFound": {
         "message": "计划任务没有找到",
         "code": 1605,
+    },
+    "DomainSiteViaJob": {
+        "message": "资产站点更新任务已存在",
+        "code": 1607,
     }
 }
 
@@ -420,4 +427,5 @@ class ErrorMsg:
     TaskTagInvalid = error_map["TaskTagInvalid"]
     FutureDateInvalid = error_map["FutureDateInvalid"]
     TaskScheduleNotFound = error_map["TaskScheduleNotFound"]
+    DomainSiteViaJob = error_map["DomainSiteViaJob"]
 

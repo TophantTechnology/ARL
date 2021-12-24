@@ -43,6 +43,9 @@ EMAIL:
 GITHUB:
   TOKEN: ""
 
+#代理配置项，如"http://127.0.0.1:8080", 端口扫描不会走代理
+PROXY:
+  HTTP_URL: ""
 
 ARL:
   AUTH: true
@@ -65,6 +68,11 @@ ARL:
   DOMAIN_DICT: ""
   #文件泄漏字典， 空即系统默认
   FILE_LEAK_DICT: ""
+
+  #域名爆破并发数
+  DOMAIN_BRUTE_CONCURRENT: 300
+  #组合生成的域名爆破并发数
+  ALT_DNS_CONCURRENT: 1500
 
 
 

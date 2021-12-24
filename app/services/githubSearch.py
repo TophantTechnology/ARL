@@ -1,8 +1,8 @@
 import base64
-import os
 from collections import deque
-from app.utils import http_req, get_logger, gen_md5, load_file
+from app.utils import http_req, get_logger, gen_md5
 from app.config import Config
+from app.utils.time import parse_datetime
 import time
 
 
@@ -17,6 +17,7 @@ class GithubResult(object):
         self.repo_full_name = item["repository"]["full_name"]
         self.path = item["path"]
         self.hash_md5 = gen_md5(self.repo_full_name + "/" + item["path"])
+        self._commit_date = None  # 记录文件最后一次 Commit 时间
         self._content = None
 
     def __str__(self):
@@ -47,6 +48,29 @@ class GithubResult(object):
         else:
             return self._content
 
+    @property
+    def commit_date(self):
+        if self._commit_date is None:
+            commit_url = "https://api.github.com/repos/{}/commits".format(
+                    self.repo_full_name)
+            params = {
+                "per_page": 1,
+                "path": self.path
+            }
+            try:
+
+                commit_info = github_client(commit_url, params=params)
+                assert commit_info
+
+                # 先保存为字符串吧
+                self._commit_date = str(parse_datetime(commit_info[0]["commit"]["author"]["date"]))
+            except Exception as e:
+                logger.info("error on {}, {}".format(commit_url, self.path))
+                logger.exception(e)
+                self._commit_date = ""
+
+        return self._commit_date
+
     def human_content(self, keyword):
         lines = self.content.split("\n")
         max_len = 8
@@ -67,7 +91,8 @@ class GithubResult(object):
             "html_url": self.html_url,
             "repo_full_name":  self.repo_full_name,
             "path": self.path,
-            "hash_md5": self.hash_md5
+            "hash_md5": self.hash_md5,
+            "commit_date": self.commit_date
         }
         return item
 
@@ -101,7 +126,7 @@ def github_client(url, params=None, cnt=0):
         "Authorization": "Bearer {}".format(Config.GITHUB_TOKEN),
         "Accept": "application/vnd.github.v3+json"
     }
-    time.sleep(2)
+    time.sleep(2.5)
     conn = http_req(url, params=params, headers=headers)
     data = conn.json()
     if conn.status_code != 200:
@@ -111,8 +136,9 @@ def github_client(url, params=None, cnt=0):
             if "You have triggered an abuse detection mechanism" in message \
                     or "API rate limit exceeded for user ID" in message\
                     or "You have exceeded a secondary rate limit" in message:
-                logger.info("rate-limit retry {} {}, time sleep 30".format(cnt, params))
-                time.sleep(30)
+                sleep_time = 20 + 15*cnt
+                logger.info("rate-limit retry {} {}, time sleep {}".format(cnt, params, sleep_time))
+                time.sleep(sleep_time)
                 return github_client(url, params=params, cnt=cnt)
 
         raise Exception(message)

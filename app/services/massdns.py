@@ -31,14 +31,13 @@ class MassDNS:
                    "-r {}".format(self.dnsserver),
                    "-o S",
                    "-w {}".format(self.massdns_output_path),
-                   "-s 300",
+                   "-s {}".format(Config.DOMAIN_BRUTE_CONCURRENT),
                    self.domaingen_output_path,
                    "--root"
                    ]
 
         logger.info(" ".join(command))
         utils.exec_system(command)
-
 
     def parse_massdns_output(self):
         output = []
@@ -65,22 +64,26 @@ class MassDNS:
         except Exception as e:
             logger.warning(e)
 
-
     def run(self):
         self.domaingen()
         self.massdns()
         output = self.parse_massdns_output()
         return output
 
+
 def mass_dns(basedomain, words):
     domains = []
+    is_fuzz_domain = "{fuzz}" in basedomain
     for word in words:
         word = word.strip()
         if word:
-            domains.append("{}.{}".format(word, basedomain))
+            if is_fuzz_domain:
+                domains.append(basedomain.replace("{fuzz}", word))
+            else:
+                domains.append("{}.{}".format(word, basedomain))
 
     domains.append(basedomain)
-    mass = MassDNS(domains, massdns_bin= Config.MASSDNS_BIN,
+    mass = MassDNS(domains, massdns_bin=Config.MASSDNS_BIN,
                dnsserver=Config.DNS_SERVER, tmp_dir=Config.TMP_PATH)
 
     return mass.run()

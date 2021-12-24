@@ -126,7 +126,6 @@ class DnsGen():
 
         return domains
 
-
     def replace_word_with_word(self, parts):
         '''
         If word longer than 3 is found in existing subdomain, replace it with other words from the dictionary
@@ -164,7 +163,6 @@ class DnsGen():
                 yield perm
 
 
-
 class AltDNS:
     def __init__(self, subdomains, base_domain = None, words = None, massdns_bin = None,
                  dnsserver = None, tmp_dir = None):
@@ -195,7 +193,7 @@ class AltDNS:
                    "-r {}".format(self.dnsserver),
                    "-o S",
                    "-w {}".format(self.massdns_output_path),
-                   "-s 1500",
+                   "-s {}".format(Config.ALT_DNS_CONCURRENT),
                    self.dnsgen_output_path,
                    "--root"
                    ]

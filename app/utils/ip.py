@@ -88,7 +88,17 @@ def get_ip_type(ip):
     from . import get_logger
     logger = get_logger()
     try:
-        return IP(ip).iptype()
+        # 国内好多企业把这两个段当成内网域名
+        if ip.startswith("9.") or ip.startswith("11."):
+            return "PRIVATE"
+
+        ip_type = IP(ip).iptype()
+
+        # 为了方便全部设置为 PRIVATE
+        if ip_type in ["CARRIER_GRADE_NAT", "LOOPBACK", "RESERVED"]:
+            return "PRIVATE"
+
+        return ip_type
 
     except Exception as e:
         logger.warning("{} {}".format(e, ip))
