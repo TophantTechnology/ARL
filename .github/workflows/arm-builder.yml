@@ -46,7 +46,7 @@ jobs:
         run: |
           DOCKER_IMAGE=tophant/arl
           DOCKER_PLATFORMS=linux/arm64
-          VERSION=latest
+          VERSION=arm-latest
 
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
