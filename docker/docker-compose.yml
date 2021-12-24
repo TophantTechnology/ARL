@@ -21,7 +21,7 @@ services:
           - ./config-docker.yaml:/code/app/config.yaml
           - ./image:/code/app/tmp_screenshot
           - ./poc:/opt/ARL-NPoC/xing/plugins/upload_poc
-        entrypoint: ["sh", "-c", "gen_crt.sh; nginx; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
+        entrypoint: ["sh", "-c", "gen_crt.sh; nginx; wait-for-it.sh mongodb:27017; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
         environment:
           - LANG=en_US.UTF-8
           - TZ=Asia/Shanghai
@@ -38,7 +38,7 @@ services:
           - ./config-docker.yaml:/code/app/config.yaml
           - ./image:/code/app/tmp_screenshot
           - ./poc:/opt/ARL-NPoC/xing/plugins/upload_poc
-        entrypoint: ["sh", "-c", "celery -A app.celerytask.celery worker -l info -Q arltask -n arltask -c 2 -O fair -f arl_worker.log"]
+        entrypoint: ["sh", "-c", "wait-for-it.sh mongodb:27017; wait-for-it.sh rabbitmq:5672; celery -A app.celerytask.celery worker -l info -Q arltask -n arltask -c 2 -O fair -f arl_worker.log"]
         environment:
           - LANG=en_US.UTF-8
           - TZ=Asia/Shanghai
@@ -52,13 +52,13 @@ services:
         - rabbitmq
       volumes:
         - ./config-docker.yaml:/code/app/config.yaml
-      entrypoint: [ "sh", "-c", "python3.6 -m app.scheduler" ]
+      entrypoint: [ "sh", "-c", "wait-for-it.sh mongodb:27017; python3.6 -m app.scheduler" ]
       environment:
         - LANG=en_US.UTF-8
         - TZ=Asia/Shanghai
 
     mongodb:
-        image: mongo:3.6-stretch
+        image: mongo:4.0.27
         container_name: arl_mongodb
         restart: always
         volumes:
@@ -71,7 +71,7 @@ services:
 
 
     rabbitmq:
-      image: rabbitmq:3.8.19-rc.1-management-alpine
+      image: rabbitmq:3.8.19-management-alpine
       container_name: arl_rabbitmq
       restart: always
       environment:
