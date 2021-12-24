@@ -26,6 +26,8 @@ COPY docker/nginx.conf  /etc/nginx/nginx.conf
 
 ## 复制生成ssl证书文件
 COPY docker/worker/gen_crt.sh /usr/bin/gen_crt.sh
+## 复制 wait-for-it
+COPY docker/worker/wait-for-it.sh /usr/bin/wait-for-it.sh
 
 ## 复制 ncrack依赖
 COPY docker/ncrack /usr/local/bin/ncrack
