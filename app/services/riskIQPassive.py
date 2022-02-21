@@ -12,7 +12,7 @@ class RiskIQPassive():
 
     def search_subdomain(self, target):
         params = {
-            "query":"*.{}".format(target)
+            "query": "*.{}".format(target)
         }
         auth = (self.auth_email, self.auth_key)
         conn = utils.http_req(self.subdomain_api,
@@ -24,18 +24,27 @@ class RiskIQPassive():
         subdomains = []
         for item in data['subdomains']:
             item = item.strip("*.")
+            item = item.lower()
+            if not item:
+                continue
+
             domain = "{}.{}".format(item, target)
 
-            #删除掉过长的域名
+            # 删除掉过长的域名
             if len(domain) >= Config.DOMAIN_MAX_LEN:
+                continue
+
+            if not utils.is_valid_domain(domain):
+                continue
+
+            # 屏蔽和谐域名和黑名单域名
+            if utils.check_domain_black(domain):
                 continue
 
             if utils.domain_parsed(domain):
                 subdomains.append(domain)
 
         return list(set(subdomains))
-
-
 
     def quota(self):
         auth = (self.auth_email, self.auth_key)
@@ -44,8 +53,6 @@ class RiskIQPassive():
         count = data["user"]["counts"]["search_api"]
         limit = data["user"]["limits"]["search_api"]
         return count, limit
-
-
 
 
 def riskiq_search(domain):
@@ -63,7 +70,8 @@ def riskiq_search(domain):
         else:
             logger.exception(e)
 
-    return  []
+    return []
+
 
 def riskiq_quota():
     try:

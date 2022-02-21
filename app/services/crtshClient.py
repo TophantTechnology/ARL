@@ -27,10 +27,11 @@ def crtsh_search(domain):
                 name = name.strip("*.")
                 name = name.lower()
 
-                if "@" in name:
+                if not utils.is_valid_domain(name):
                     continue
 
-                if not utils.domain_parsed(domain):
+                # 屏蔽和谐域名和黑名单域名
+                if utils.check_domain_black(name):
                     continue
 
                 if name.endswith("."+domain):

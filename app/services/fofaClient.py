@@ -10,10 +10,10 @@ class FofaClient:
     def __init__(self, email, key, page_size=9999):
         self.email = email
         self.key = key
-        self.base_url = "https://fofa.so"
+        self.base_url = Config.FOFA_URL
         self.search_api_url = "/api/v1/search/all"
         self.info_my_api_url = "/api/v1/info/my"
-        self.page_size = page_size  # 终身用户
+        self.page_size = page_size
         self.param = {}
 
     def info_my(self):
@@ -40,14 +40,14 @@ class FofaClient:
 
     def _api(self, url):
         data = utils.http_req(url, 'get', params=self.param).json()
+        if data.get("error") and data["errmsg"]:
+            raise Exception(data["errmsg"])
+
         return data
 
     def search_cert(self, cert):
         query = 'cert="{}"'.format(cert)
         data = self.fofa_search_all(query)
-        if data["error"] and data["errmsg"]:
-            raise Exception(data["errmsg"])
-
         results = data["results"]
         return results
 
@@ -72,11 +72,17 @@ def fofa_query(query, page_size=9999):
             return "please set fofa key in config-docker.yaml"
 
         client = FofaClient(Config.FOFA_EMAIL, Config.FOFA_KEY, page_size=page_size)
-        data = client.fofa_search_all(query)
-        if 'error' not in data:
-            return "fofa api endpoint change"
+        info = client.info_my()
+        if info.get("vip_level") == 0:
+            return "不支持注册用户"
 
+        # 普通会员，最多只查100条
+        if info.get("vip_level") == 1:
+            client.page_size = min(page_size, 100)
+
+        data = client.fofa_search_all(query)
         return data
+
     except Exception as e:
         error_msg = str(e)
         error_msg = error_msg.replace(Config.FOFA_KEY[10:], "***")
