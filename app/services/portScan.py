@@ -10,9 +10,9 @@ class PortScan:
                  port_parallelism=None, port_min_rate=None, custom_host_timeout=None):
         self.targets = " ".join(targets)
         self.ports = ports
-        self.max_hostgroup = 20
+        self.max_hostgroup = 50
         self.alive_port = "22,80,443,843,3389,8007-8011,8443,9090,8080-8091,8093,8099,5000-5004,2222,3306,1433,21,25"
-        self.nmap_arguments = "-sS -n --open"
+        self.nmap_arguments = "-sT -n --open"
         self.max_retries = 3
         self.host_timeout = 60*5
         self.parallelism = port_parallelism  # 默认 32
@@ -34,9 +34,8 @@ class PortScan:
                 self.nmap_arguments += " -Pn"
 
         if self.ports == "0-65535":
-            self.max_hostgroup = 1
-            # 大概是680kb/s ,再小就太慢了。 大概1分钟时间
-            self.min_rate = max(self.min_rate, 2000)
+            self.max_hostgroup = 4
+            self.min_rate = max(self.min_rate, 400)
 
             self.nmap_arguments += " -PE -PS{}".format(self.alive_port)
             self.host_timeout += 60 * 2
@@ -64,7 +63,13 @@ class PortScan:
         for host in nm.all_hosts():
             port_info_list = []
             for proto in nm[host].all_protocols():
+                port_len = len(nm[host][proto])
+
                 for port in nm[host][proto]:
+                    # 对于开了很多端口的直接丢弃
+                    if port_len > 600 and (port not in [80, 443]):
+                        continue
+
                     port_info = nm[host][proto][port]
                     item = {
                         "port_id": port,

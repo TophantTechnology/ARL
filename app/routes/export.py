@@ -182,7 +182,7 @@ class SaveTask(object):
         ws = self.wb.create_sheet(title="IP")
         ws.column_dimensions['A'].width = 22.0
         ws.column_dimensions['B'].width = 50.0
-        ws.column_dimensions['C'].width = 30.0
+        ws.column_dimensions['C'].width = 10.0
         ws.column_dimensions['D'].width = 25.0
         ws.column_dimensions['E'].width = 55.0
         if self.is_ip_task:
@@ -211,10 +211,14 @@ class SaveTask(object):
                 ws.append(row)
         else:
             ws.column_dimensions['F'].width = 60.0
-            ws.column_dimensions['G'].width = 55.0
+            ws.column_dimensions['G'].width = 40.0
+            ws.column_dimensions['H'].width = 40.0
+            ws.column_dimensions['I'].width = 20.0
             column_tilte = ["IP", "端口信息", "开放端口数目", "geo", "as 编号"]
             column_tilte.append("domain")
             column_tilte.append("操作系统")
+            column_tilte.append("CDN")
+            column_tilte.append("类别")
             ws.append(column_tilte)
             for item in get_ip_data(self.task_id):
                 row = []
@@ -238,6 +242,8 @@ class SaveTask(object):
                 if item.get("os_info"):
                     osname = item["os_info"]["name"]
                 row.append(osname)
+                row.append(item.get("cdn_name", ""))
+                row.append(item.get("ip_type", ""))
                 ws.append(row)
 
         self.set_style(ws)

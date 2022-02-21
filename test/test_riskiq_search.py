@@ -11,7 +11,10 @@ class TestRiskIQSearch(unittest.TestCase):
         quota = riskiq_quota()
         print("query balances: {}".format(quota))
         self.assertTrue(quota > 0)
-        data = services.riskiq_search("tophant.com")
+        domain = "tophant.com"
+        data = services.riskiq_search(domain)
+        print("search {}, resule {}".format(domain, len(data)))
+        print("result 10, {}".format(" ".join(data[:10])))
         self.assertTrue(len(data) >= 1)
 
 

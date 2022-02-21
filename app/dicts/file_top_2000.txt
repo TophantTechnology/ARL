@@ -220,6 +220,7 @@ api/v1/proxy/nodes
 api/v2/api-docs
 api/v4/users/1
 api/v4/users/2
+apisix
 apizza/
 apollo
 app.cfg
@@ -251,9 +252,11 @@ auth/login
 auth/login/sentry/
 autoconfig
 axis/
+axis/services
 axis2
 axis2/
 axis2/axis2-admin/login
+axis2/services
 b.php
 back.tar.bz2
 backup
@@ -443,6 +446,8 @@ debug/metrics
 debug/pprof/
 debug/vars
 default1.aspx
+defaultroot/officeserverservlet
+defaultroot/upload/fileUpload.controller
 demo
 deploy.sh
 deploy.tar.gz
@@ -523,6 +528,9 @@ gateway
 gateway/globalfilters
 gateway/routefilters
 gateway/routes
+git
+gitee
+gitlab
 gitlab/
 goroutine
 grafana/
@@ -549,6 +557,7 @@ htdocs.tar.gz
 htpasswd.bak
 httpd.conf
 hub
+hystrix
 hystrix.stream
 i.php
 iam
@@ -751,6 +760,7 @@ prometheus
 properties
 proxy
 proxy.pac
+proxy.stream
 public/README.md
 Public/ueditor/php/config.json
 query?q=SHOW%20STATS
@@ -826,6 +836,7 @@ service/siesta/swagger.json
 services
 Services
 services/
+servlet/AxisServlet
 settings.ini
 setup.php
 setup.sh
@@ -880,6 +891,7 @@ stats/container
 status
 status2
 storage/logs/laravel.log
+storm
 swagger-resources
 swagger-ui
 swagger-ui.html
