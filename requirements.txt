@@ -3,6 +3,7 @@ colorlog==3.1.4
 pymongo==3.7.1
 Werkzeug==0.14.1
 Flask==0.12.4
+itsdangerous==2.0.1
 celery==4.2.1
 flask_restplus==0.13.0
 requests==2.26.0
