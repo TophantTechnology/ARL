@@ -332,7 +332,7 @@ class Domain2SiteMonitor(object):
             return []
 
         # 设置超时，加快速度
-        site_info_list = fetch_site(sites, concurrency=20, http_timeout=(6, 6))
+        site_info_list = fetch_site(sites, concurrency=20, http_timeout=(5, 6))
 
         # 过滤 502, 504
         for site_info in site_info_list:

@@ -25921,5 +25921,45 @@
         "icon": "default.png",
         "website": "https://www.riskivy.com/",
         "fofa_rule": "header=\"mongo-express\" || title=\"Mongo Express\""
+    },
+    "资产灯塔系统": {
+        "cats": [
+            1111
+        ],
+        "headers": [],
+        "html": [],
+        "title": [
+            "资产灯塔系统"
+        ],
+        "icon": "default.png",
+        "website": "https://www.riskivy.com/",
+        "fofa_rule": ""
+    },
+    "APISIX": {
+        "cats": [
+            1111
+        ],
+        "headers": [
+            "APISIX/"
+        ],
+        "html": [],
+        "title": [
+        ],
+        "icon": "default.png",
+        "website": "https://www.riskivy.com/",
+        "fofa_rule": ""
+    },
+    "Konga": {
+        "cats": [
+            1111
+        ],
+        "headers": [],
+        "html": [],
+        "title": [
+            "Konga"
+        ],
+        "icon": "default.png",
+        "website": "https://www.riskivy.com/",
+        "fofa_rule": ""
     }
 }

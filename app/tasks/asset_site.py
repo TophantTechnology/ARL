@@ -1,9 +1,10 @@
 from bson import ObjectId
 from app import utils
-from app.services.commonTask import CommonTask
+from app.services.commonTask import CommonTask, WebSiteFetch
 from app.modules import TaskStatus
 from app.helpers.message_notify import push_email, push_dingding
-
+from app.tasks.poc import RiskCruising
+from app.services import webhook
 logger = utils.get_logger()
 
 
@@ -75,6 +76,9 @@ class AssetSiteUpdateTask(CommonTask):
         if markdown_report:
             push_dingding(markdown_report=markdown_report)
 
+        if html_report or markdown_report:
+            webhook.site_asset_web_hook(task_id=self.task_id, scope_id=self.scope_id)
+
     def run(self):
         self.set_start_time()
         self.monitor()
@@ -95,3 +99,51 @@ def asset_site_update_task(task_id, scope_id, scheduler_id):
 
         task.update_status(TaskStatus.ERROR)
         task.set_end_time()
+
+
+class AddAssetSiteTask(RiskCruising):
+    def __init__(self, task_id):
+        super().__init__(task_id=task_id)
+
+    def asset_site_deduplication(self):
+        related_scope_id = self.options.get("related_scope_id", "")
+        if not related_scope_id:
+            raise Exception("not found related_scope_id, task_id:{}".format(self.task_id))
+
+        new_targets = []
+
+        for url in self.targets:
+            if "://" not in url:
+                url = "http://" + url
+
+            # 这里简单去下
+            url = url.strip("/")
+            site_data = utils.conn_db('asset_site').find_one({"site": url, "scope_id": related_scope_id})
+            if site_data:
+                logger.info("{} is in scope".format(url))
+                continue
+            new_targets.append(url)
+        self.targets = new_targets
+
+    def work(self):
+        self.asset_site_deduplication()
+        self.pre_set_site()
+        if self.user_target_site_set:
+            web_site_fetch = WebSiteFetch(self.task_id, list(self.user_target_site_set), self.options)
+            web_site_fetch.run()
+
+        self.common_run()
+
+
+def run_add_asset_site_task(task_id):
+    query = {"_id": ObjectId(task_id)}
+    task_data = utils.conn_db('task').find_one(query)
+
+    if not task_data:
+        return
+
+    if task_data["status"] != "waiting":
+        return
+
+    r = AddAssetSiteTask(task_id)
+    r.run()

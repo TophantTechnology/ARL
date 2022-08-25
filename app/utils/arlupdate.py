@@ -37,6 +37,13 @@ def create_index():
         conn_db(table).create_index(index_map[table])
 
 
+# 对site 集合中少数字段创建索引
+def create_site_index():
+    fields = ["status", "title", "hostname"]
+    for field in fields:
+        conn_db("site").create_index(field)
+
+
 def arl_update():
     update_lock = os.path.join(Config.TMP_PATH, 'arl_update.lock')
     if os.path.exists(update_lock):
@@ -44,5 +51,6 @@ def arl_update():
 
     update_task_tag()
     create_index()
+    create_site_index()
 
     open(update_lock, 'a').close()

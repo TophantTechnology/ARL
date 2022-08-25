@@ -8,10 +8,28 @@ MONGO:
   DB : 'arl'
 
 
-#演示帐号有查询额度限制，请前往 https://community.riskiq.com/ 注册自己的key并替换
-RISKIQ:
-  EMAIL: "n1un1u2019@qq.com"
-  KEY: "03da3c29cce5152a536bae332f7b03a288154b37a13b93921225d3ade49c9b4c"
+
+# 利用三方API进行域名收集
+# 测试命令 python3.6 -m test.test_query_plugin [source1] [source2]
+QUERY_PLUGIN:
+  passivetotal: #演示帐号有查询额度限制，请前往 https://community.riskiq.com/ 注册自己的key并替换
+    auth_email: n1un1u2019@qq.com
+    auth_key: 03da3c29cce5152a536bae332f7b03a288154b37a13b93921225d3ade49c9b4c
+  hunter_qax:  # 网站 https://hunter.qianxin.com/
+    api_key:
+    page_size: 100
+    max_page: 5
+  securitytrails: # 网站 https://securitytrails.com/
+    api_key:
+  virustotal: # 网站 https://www.virustotal.com/gui/
+    api_key:
+  quake_360: # 网站 https://quake.360.cn/
+    quake_token:
+    max_size: 500
+  certspotter: # https://www.certspotter.com/
+    after_id: 0
+    max_page: 3
+
 
 #GeoIP 数据库文件配置项
 GEOIP:
@@ -21,6 +39,7 @@ GEOIP:
 
 #Fofa API 配置项
 FOFA:
+  URL: "https://fofa.info"
   EMAIL: ""
   KEY: ""
 
@@ -38,6 +57,14 @@ EMAIL:
   USERNAME: ""
   PASSWORD: ""
   TO: ""
+
+# 监控任务 WEBHOOK 配置
+# IP/域名监控和站点监控结束后会往下面的URL POST提交JSON数据
+# 为了验证身份会在Header中带上Token 字段
+WEBHOOK:
+  URL: ""
+  TOKEN: ""
+
 
 #GITHUB 搜索 TOKEN
 GITHUB:
@@ -58,6 +85,7 @@ ARL:
     - 100.64.0.0/10
     #- 10.0.0.0/8
     #- 192.168.0.0/16
+  ## 禁止域名，不可为空数组
   FORBIDDEN_DOMAINS:
     - edu.cn
     - org.cn

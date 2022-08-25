@@ -24,6 +24,10 @@ class CheckHTTP(BaseThread):
             if not etag or not date:
                 return None
 
+        # *** 特殊情况过滤
+        if conn.status_code == 422:
+            return None
+
         if (conn.status_code >= 501) and (conn.status_code < 600):
             return None
 

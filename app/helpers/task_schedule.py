@@ -6,6 +6,7 @@ import time
 
 from .policy import get_options_by_policy_id
 
+
 logger = utils.get_logger()
 
 
@@ -17,8 +18,10 @@ def task_scheduler():
             if item["status"] != TaskScheduleStatus.SCHEDULED:
                 continue
 
-            if item["task_tag"] != TaskTag.TASK:
-                logger.warning("非task, {} {}", item["task_tag"], str(item["_id"]))
+            task_tag = item["task_tag"]
+            should_scheduler_tag = [TaskTag.TASK, TaskTag.RISK_CRUISING]
+            if task_tag not in should_scheduler_tag:
+                logger.warning("非资产发现任务或风险巡航任务, {} {}", item["task_tag"], str(item["_id"]))
                 continue
 
             if item["schedule_type"] == "recurrent_scan":
@@ -40,10 +43,11 @@ def task_scheduler():
 
 # 提交计划任务
 def submit_task_schedule(item):
+    from .task import submit_risk_cruising
     from .task import submit_task_task
     target = item["target"]
     task_tag = item["task_tag"]
-    policy_name = item["policy_name"]
+    task_schedule_name = item["name"]
     policy_id = item["policy_id"]
     options = get_options_by_policy_id(policy_id, task_tag=task_tag)
 
@@ -51,13 +55,18 @@ def submit_task_schedule(item):
         change_task_schedule_status(item["_id"], TaskScheduleStatus.ERROR)
         raise Exception("not found policy_id {}".format(policy_id))
 
-    name = "计划定时任务-{}".format(policy_name[:15])
+    name = "定时任务-{}".format(task_schedule_name[:15])
 
     if item["schedule_type"] == "recurrent_scan":
         run_number = item.get("run_number", 0) + 1
-        name = "计划周期任务-{}-{}".format(policy_name[:15], run_number)
+        name = "周期任务-{}-{}".format(task_schedule_name[:15], run_number)
 
-    submit_task_task(target=target, name=name, options=options)
+    if task_tag == TaskTag.TASK:
+        submit_task_task(target=target, name=name, options=options)
+    if task_tag == TaskTag.RISK_CRUISING:
+        task_data_list = submit_risk_cruising(target=target, name=name, options=options)
+        if not task_data_list:
+            raise Exception("not found task_data {}".format(target))
 
 
 # 根据cron 生成下一次运行时间
@@ -68,7 +77,7 @@ def get_next_run_date(cron):
     return utils.time2date(now_time + next_sec - 60)
 
 
-# 执行周期任务
+# 触发周期任务执行
 def run_recurrent_scan(item):
 
     # 记录运行时间和次数
@@ -86,7 +95,7 @@ def run_recurrent_scan(item):
     submit_task_schedule(item)
 
 
-# 执行定时计划
+# 触发定时任务执行
 def run_future_scan(item):
     query = {
         "_id": item["_id"]

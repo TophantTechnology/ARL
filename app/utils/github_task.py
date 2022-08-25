@@ -29,10 +29,10 @@ def submit_github_task(task_data, action, delay_flag=True):
 
     try:
         if delay_flag:
-            celery_id = celerytask.arl_task.delay(options=task_options)
+            celery_id = celerytask.arl_github.delay(options=task_options)
         else:
             celery_id = "fake_celery_id"
-            celerytask.arl_task(options=task_options)
+            celerytask.arl_github(options=task_options)
 
         logger.info("target:{} task_id:{} celery_id:{}".format(keyword, task_id, celery_id))
         values = {"$set": {"celery_id": str(celery_id)}}
@@ -50,7 +50,7 @@ def submit_github_task(task_data, action, delay_flag=True):
 # Github 监控任务下发
 def github_cron_run(item):
     task_data = {
-        "name": "Github监控-" + item["name"],
+        "name": "GitHub监控-" + item["name"],
         "keyword": item["keyword"],
         "start_time": "-",
         "end_time": "-",

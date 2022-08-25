@@ -55,7 +55,7 @@ def is_valid_domain(domain):
     if "." not in domain:
         return False
 
-    invalid_chars = "!@#$%&*():_"
+    invalid_chars = "!@#$%&*():_\\"
     for c in invalid_chars:
         if c in domain:
             return False

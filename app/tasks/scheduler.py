@@ -6,10 +6,11 @@ from .ip import IPTask
 from app import utils
 from app.modules import TaskStatus, CollectSource, SchedulerStatus
 from app.services import sync_asset, build_domain_info
-logger = utils.get_logger()
 import time
 from app.scheduler import update_job_run
+from app.services import webhook
 
+logger = utils.get_logger()
 
 def domain_executors(base_domain=None, job_id=None, scope_id=None, options=None, name=""):
     logger.info("start domain_executors {} {} {}".format(base_domain, scope_id, options))
@@ -45,7 +46,6 @@ def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=
         'options': {
             'domain_brute': True,
             'domain_brute_type': 'test',
-            'riskiq_search': False,
             'alt_dns': False,
             'arl_search': True,
             'port_scan_type': 'test',
@@ -60,7 +60,7 @@ def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=
             'search_engines': False,
             'ssl_cert': False,
             'fofa_search': False,
-            'crtsh_search': True,
+            'dns_query_plugin': False,
             'scope_id': scope_id
         },
         'celery_id': celery_id
@@ -77,6 +77,7 @@ def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=
         new_domain = domain_executor.run()
         if new_domain:
             sync_asset(task_id, scope_id, update_flag=True, push_flag=True, task_name=name)
+            webhook.domain_asset_web_hook(task_id=task_id, scope_id=scope_id)
     except Exception as e:
         logger.exception(e)
         domain_executor.update_task_field("status", TaskStatus.ERROR)
@@ -85,6 +86,7 @@ def wrap_domain_executors(base_domain=None, job_id=None, scope_id=None, options=
     logger.info("end domain_executors {} {} {}".format(base_domain, scope_id, options))
 
 
+# ***域名监控任务　＊＊＊
 class DomainExecutor(DomainTask):
     def __init__(self, base_domain, task_id, options):
         super().__init__(base_domain, task_id, options)
@@ -117,10 +119,10 @@ class DomainExecutor(DomainTask):
         # cidr ip 结果统计，插入cip 集合中
         self.insert_cip_stat()
 
-        # 任务结果统计
-        self.insert_task_stat()
         # 任务指纹信息统计
         self.insert_finger_stat()
+        # 任务结果统计
+        self.insert_task_stat()
 
         self.update_task_field("status", TaskStatus.DONE)
         self.update_task_field("end_time", utils.curr_date())
@@ -194,6 +196,7 @@ class DomainExecutor(DomainTask):
         return new
 
 
+# ***IP监控任务　＊＊＊
 class IPExecutor(IPTask):
     def __init__(self, target, scope_id, task_name,  options):
         super().__init__(ip_target=target, task_id=None, options=options)
@@ -235,6 +238,8 @@ class IPExecutor(IPTask):
         task_data["options"].update(self.options)
         conn('task').insert_one(task_data)
         self.task_id = str(task_data.pop("_id"))
+        # base_update_task 初始化在前，再设置回task_id
+        self.base_update_task.task_id = self.task_id
 
     def set_asset_ip(self):
         if self.task_tag != 'monitor':
@@ -325,6 +330,7 @@ class IPExecutor(IPTask):
 
         if len(self.ip_info_list) > 0:
             utils.message_push(asset_map=new_asset_map, asset_counter=new_asset_counter)
+            webhook.ip_asset_web_hook(task_id=self.task_id, scope_id=self.scope_id)
 
 
 def ip_executor(target, scope_id, task_name, job_id, options):
@@ -351,4 +357,4 @@ def ip_executor(target, scope_id, task_name, job_id, options):
     except Exception as e:
         logger.warning("error on ip_executor {}".format(executor.ip_target))
         logger.exception(e)
-        executor.update_task_field("status", TaskStatus.ERROR)
+        executor.base_update_task.update_task_field("status", TaskStatus.ERROR)

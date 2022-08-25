@@ -5,7 +5,7 @@ from app.modules import CeleryAction
 
 task_data = {
     'name': '自动化测试',
-    'target': '180.101.49.12',
+    'target': '10.0.80.107',
     'start_time': '-',
     'status': 'waiting',
     'type': 'ip',
@@ -14,7 +14,7 @@ task_data = {
         'domain_brute': True,
         'domain_brute_type': 'test',
         'port_scan_type': 'custom',
-        'port_custom': '80,443',
+        'port_custom': '80,443,9100',
         'host_timeout_type': 'custom',
         'host_timeout': 130,
         'port_parallelism': 12,
@@ -24,13 +24,13 @@ task_data = {
         'service_brute': False,
         'os_detection': False,
         'site_identify': True,
-        'site_capture': False,
+        'site_capture': True,
         'file_leak': False,
-        'alt_dns': False,
+        'site_spider': False,
+        'nuclei_scan': True,
         'ssl_cert': False,
-        'fetch_api_path': False,
-        'fofa_search': False,
-    }
+    },
+    "celery_id": "fake celery_id"
 }
 
 

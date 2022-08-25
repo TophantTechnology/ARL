@@ -27,8 +27,8 @@ def get_options_by_policy_id(policy_id, task_tag):
     if task_tag == TaskTag.TASK:
         options.update(domain_config)
         options.update(ip_config)
-        # 目前对于站点的处理，还不能方便调用，先不支持
-        options.update(site_config)
+
+    options.update(site_config)
 
     options.update(policy)
     return options

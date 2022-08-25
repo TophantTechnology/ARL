@@ -23,6 +23,11 @@ platforms.C_FORCE_ROOT = True
 
 @celery.task(queue='arltask')
 def arl_task(options):
+    # 这里不检验 celery_action， 调用的时候区分
+    run_task(options)
+
+
+def run_task(options):
     signal.signal(signal.SIGTERM, utils.exit_gracefully)
 
     action = options.get("celery_action")
@@ -33,15 +38,18 @@ def arl_task(options):
         CeleryAction.IP_EXEC_TASK: ip_exec,
         CeleryAction.DOMAIN_TASK: domain_task,
         CeleryAction.IP_TASK: ip_task,
-        CeleryAction.RUN_RISK_CRUISING: run_risk_cruising,
+        CeleryAction.RUN_RISK_CRUISING: run_risk_cruising_task,
         CeleryAction.FOFA_TASK: fofa_task,
         CeleryAction.GITHUB_TASK_TASK: github_task_task,
         CeleryAction.GITHUB_TASK_MONITOR: github_task_monitor,
-        CeleryAction.ASSET_SITE_UPDATE: asset_site_update
+        CeleryAction.ASSET_SITE_UPDATE: asset_site_update,
+        CeleryAction.ADD_ASSET_SITE_TASK: asset_site_add_task,
     }
-    logger.info(options)
     start_time = time.time()
-    logger.info("start {} time: {}".format(action, start_time))
+    # 这里监控任务 task_id 和 target 是空的
+    logger.info("run_task action:{} time: {}".format(action, start_time))
+    logger.info("name:{}, target:{}, task_id:{}".format(
+        data.get("name"), data.get("target"), data.get("task_id")))
     try:
         fun = action_map.get(action)
         if fun:
@@ -53,6 +61,12 @@ def arl_task(options):
 
     elapsed = time.time() - start_time
     logger.info("end {} elapsed: {}".format(action, elapsed))
+
+
+@celery.task(queue='arlgithub')
+def arl_github(options):
+    # 这里不检验 celery_action， 调用的时候区分
+    run_task(options)
 
 
 def domain_exec(options):
@@ -105,9 +119,9 @@ def ip_task(options):
     wrap_tasks.ip_task(target, task_id, task_options)
 
 
-def run_risk_cruising(options):
+def run_risk_cruising_task(options):
     task_id = options["task_id"]
-    wrap_tasks.run_risk_cruising(task_id)
+    wrap_tasks.run_risk_cruising_task(task_id)
 
 
 def fofa_task(options):
@@ -152,3 +166,7 @@ def asset_site_update(options):
     wrap_tasks.asset_site_update_task(task_id=task_id,
                                       scope_id=scope_id, scheduler_id=scheduler_id)
 
+
+def asset_site_add_task(options):
+    task_id = options["task_id"]
+    wrap_tasks.run_add_asset_site_task(task_id)

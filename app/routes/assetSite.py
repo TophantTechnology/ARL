@@ -2,8 +2,11 @@ from bson import ObjectId
 from flask_restplus import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
-from app.modules import ErrorMsg
+from app.modules import ErrorMsg, TaskTag
 from app import utils, services
+from app.helpers.asset_site import find_asset_site_not_in_scope
+from app.helpers.task import target2list, submit_add_asset_site_task
+from app.helpers.policy import get_options_by_policy_id
 
 ns = Namespace('asset_site', description="资产组站点信息")
 
@@ -33,6 +36,7 @@ base_search_fields.update(base_query_fields)
 add_site_fields = ns.model('addAssetSite',  {
     'site': fields.String(required=True, description="站点"),
     'scope_id': fields.String(required=True, description="资产组范围ID"),
+    'policy_id': fields.String(description="策略 ID"),
 })
 
 
@@ -58,11 +62,9 @@ class ARLAssetSite(ARLResource):
         添加站点到资产组中
         """
         args = self.parse_args(add_site_fields)
-        site = args.pop("site")
+        site = args.pop("site")  # 这里可能提交大量的
         scope_id = args.pop("scope_id")
-        url = utils.normal_url(site).strip("/")
-        if not url:
-            return utils.build_ret(ErrorMsg.DomainInvalid, {"site": site})
+        policy_id = args.pop("policy_id")
 
         scope_data = utils.conn_db('asset_scope').find_one({"_id": ObjectId(scope_id)})
         if not scope_data:
@@ -70,28 +72,40 @@ class ARLAssetSite(ARLResource):
 
         scope_type = scope_data.get("scope_type", "domain")
         if scope_type == "ip":
-            host_name = utils.get_hostname(url)
-            host_ip = host_name.split(":")[0]
-            if utils.get_ip_type(host_ip) == "ERROR":
-                return utils.build_ret(ErrorMsg.IPInvalid, {"ip": host_ip})
+            return utils.build_ret(ErrorMsg.AddAssetSiteNotSupportIP, {})
 
-            if not utils.ip.ip_in_scope(host_ip, scope_data.get("scope_array", [])):
-                return utils.build_ret(ErrorMsg.IPNotFoundViaScope, {"ip": host_ip})
-        else:
-            fld = utils.get_fld(url)
-            if not fld:
-                return utils.build_ret(ErrorMsg.SiteURLNotDomain, {"site": url})
+        sites = target2list(site)
+        if not sites:
+            return utils.build_ret(ErrorMsg.URLInvalid, {"site": site})
 
-            if fld not in scope_data["scope"]:
-                return utils.build_ret(ErrorMsg.DomainNotFoundViaScope, {"site": url})
+        not_in_scope_sites = find_asset_site_not_in_scope(sites, scope_id)
+        if not_in_scope_sites:
+            return utils.build_ret(ErrorMsg.TaskTargetNotInScope, {"not_in_scope_sites": site})
 
-        site_data = utils.conn_db('asset_site').find_one({"site": url, "scope_id": scope_id})
-        if site_data:
-            return utils.build_ret(ErrorMsg.SiteInScope, {"site": url})
+        name = "添加站点-{}".format(scope_data["name"])
 
-        add_site_to_scope(url, scope_id)
+        options = {
+            'site_identify': False,
+            'site_capture': False,
+            'file_leak': False,
+            'site_spider': False,
+            'search_engines': False,
+            'related_scope_id': scope_id
+        }
 
-        return utils.build_ret(ErrorMsg.Success, {"site": url})
+        try:
+            if policy_id and len(policy_id) == 24:
+                policy_options = get_options_by_policy_id(policy_id=policy_id, task_tag=TaskTag.RISK_CRUISING)
+                if policy_options:
+                    policy_options["related_scope_id"] = scope_id
+                    options.update(policy_options)
+
+            task_data = submit_add_asset_site_task(task_name=name, target=sites, options=options)
+        except Exception as e:
+            logger.exception(e)
+            return utils.build_ret(ErrorMsg.Error, {"error": str(e)})
+
+        return utils.build_ret(ErrorMsg.Success, task_data)
 
 
 @ns.route('/export/')

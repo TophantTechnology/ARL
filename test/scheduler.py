@@ -9,12 +9,11 @@ scope_id = "5fb51bb26591e71df2d1f27c"
 options = {
     'domain_brute': True,
     'domain_brute_type': 'test',
-    'riskiq_search': False,
     'alt_dns': False,
     'arl_search': False,
     'port_scan_type': 'test',
     'port_scan': True,
-    'crtsh_search': False,
+    'dns_query_plugin': False,
     'site_identify': True
 }
 

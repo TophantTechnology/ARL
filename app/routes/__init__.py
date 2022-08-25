@@ -137,15 +137,15 @@ class ARLResource(Resource):
 
         for x in default_field_map:
             if x in args and args[x]:
-                ret[x] =  args.pop(x)
+                ret[x] = args.pop(x)
                 if x == "size":
-                    if ret[x]<=0:
+                    if ret[x] <= 0:
                         ret[x] = 10
-                    if ret[x]>= 10000:
-                        ret[x] = 10000
+                    if ret[x] >= 100000:
+                        ret[x] = 100000
 
                 if x == "page":
-                    if ret[x]<=0:
+                    if ret[x] <= 0:
                         ret[x] = 1
 
         orderby_list = []
@@ -274,3 +274,4 @@ from .github_result import ns as github_result_ns
 from .github_monitor_result import ns as github_monitor_result_ns
 from .github_scheduler import ns as github_scheduler_ns
 from .task_schedule import ns as task_schedule_ns
+from .nuclei_result import ns as nuclei_result_ns
