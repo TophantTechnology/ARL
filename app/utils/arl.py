@@ -22,14 +22,21 @@ def get_domain_by_id(task_id):
 
 
 def arl_domain(domain):
+    from app.utils.domain import is_valid_domain
     domains = []
     for task_id in get_task_ids(domain):
         for item in get_domain_by_id(task_id):
+            if not is_valid_domain(domain):
+                continue
+
             if item.endswith("." + domain):
                 domains.append(item)
 
     for scope_id in get_scope_ids(domain):
         for item in get_asset_domain_by_id(scope_id):
+            if not is_valid_domain(domain):
+                continue
+
             if item.endswith("." + domain):
                 domains.append(item)
 
@@ -79,6 +86,7 @@ def task_statistic(task_id=None):
     ret = dict()
     table_list = ['site', 'domain', 'ip', 'cert', 'service', 'fileleak']
     table_list.extend(['url', 'vuln', 'npoc_service', 'cip'])
+    table_list.extend(["nuclei_result", "stat_finger"])
     for table in table_list:
         cnt = conn_db(table).count_documents(query)
         stat_key = table + "_cnt"

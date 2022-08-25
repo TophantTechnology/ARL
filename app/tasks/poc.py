@@ -4,14 +4,14 @@ from app.modules import TaskStatus
 from app.services import npoc
 from app.config import Config
 import time
-logger = utils.get_logger()
 from bson import ObjectId
 from urllib.parse import urlparse
-from app import services
-from app.services.commonTask import CommonTask
+from app.services.commonTask import CommonTask, WebSiteFetch
+
+logger = utils.get_logger()
 
 
-def run_risk_cruising(task_id):
+def run_risk_cruising_task(task_id):
     query = {"_id": ObjectId(task_id)}
     task_data = utils.conn_db('task').find_one(query)
 
@@ -42,8 +42,7 @@ class RiskCruising(CommonTask):
         self.sniffer_target_set = set()
         self.npoc_service_target_set = set()
         self.user_target_site_set = set()  # 用户提交的目录站点
-        self.site_list = []
-        self.site_302_list = []
+        self.available_sites = []
 
     def init_plugin_name(self):
         poc_config = self.options.get("poc_config", [])
@@ -63,6 +62,7 @@ class RiskCruising(CommonTask):
         self.brute_plugin_name = plugin_name
 
     def set_relay_targets(self):
+        # 对用户提交的 1.1.1.1:22 数据 进行设置到 sniffer_target_set
         if self.targets:
             for x in self.targets:
                 o = urlparse(x)
@@ -78,6 +78,7 @@ class RiskCruising(CommonTask):
 
         if not self.result_set_id:
             return
+        # 根据 result_set_id 查询 站点
         query_result_set = {"_id": ObjectId(self.result_set_id)}
         item = utils.conn_db('result_set').find_one(query_result_set)
         targets = item["items"]
@@ -95,7 +96,7 @@ class RiskCruising(CommonTask):
 
     def run_poc(self):
         """运行poc，获取进度"""
-        targets = self.site_list + list(self.npoc_service_target_set)
+        targets = self.available_sites + list(self.npoc_service_target_set)
         logger.info("start run poc {}*{}".format(len(self.poc_plugin_name), len(targets)))
 
         run_total = len(self.poc_plugin_name) * len(targets)
@@ -117,7 +118,7 @@ class RiskCruising(CommonTask):
 
     def run_brute(self):
         """运行爆破，获取进度"""
-        target = self.site_list + list(self.npoc_service_target_set)
+        target = self.available_sites + list(self.npoc_service_target_set)
         plugin_name = self.brute_plugin_name
         logger.info("start run brute {}*{}".format(len(plugin_name), len(target)))
         run_total = len(plugin_name) * len(target)
@@ -138,7 +139,18 @@ class RiskCruising(CommonTask):
             item["save_date"] = utils.curr_date()
             utils.conn_db('vuln').insert_one(item)
 
-    def find_site(self):
+    def update_services(self, status, elapsed):
+        elapsed = "{:.2f}".format(elapsed)
+        self.update_task_field("status", status)
+        update = {"$push": {"service": {"name": status, "elapsed": float(elapsed)}}}
+        utils.conn_db('task').update_one(self.query, update)
+
+    def update_task_field(self, field=None, value=None):
+        update = {"$set": {field: value}}
+        utils.conn_db('task').update_one(self.query, update)
+
+    def pre_set_site(self):
+        # *** 对用户提交的数据 保存到 user_target_site_set
         for x in self.targets:
             if "://" not in x:
                 self.user_target_site_set.add("http://{}".format(x))
@@ -147,58 +159,18 @@ class RiskCruising(CommonTask):
             if not x.startswith("http"):
                 continue
 
-            cut_target = utils.url.cut_filename(x)
-            if cut_target:
-                self.user_target_site_set.add(cut_target)
-
-    def fetch_site(self):
-        site_info_list = services.fetch_site(self.user_target_site_set)
-        for site_info in site_info_list:
-            curr_site = site_info["site"]
-
-            self.site_list.append(curr_site)
-
-            if curr_site not in self.user_target_site_set:
-                self.site_302_list.append(curr_site)
-            site_path = "/image/" + self.task_id
-            file_name = '{}/{}.jpg'.format(site_path, utils.gen_filename(curr_site))
-            site_info["task_id"] = self.task_id
-            site_info["screenshot"] = file_name
-            site_info["finger"] = []
-            utils.conn_db('site').insert_one(site_info)
-
-    def file_leak(self):
-        for site in self.site_list:
-            pages = services.file_leak([site], utils.load_file(Config.FILE_LEAK_TOP_2k))
-            for page in pages:
-                item = page.dump_json()
-                item["task_id"] = self.task_id
-                item["site"] = site
-
-                utils.conn_db('fileleak').insert_one(item)
-
-    def update_services(self, status, elapsed):
-        elapsed = "{:.2f}".format(elapsed)
-        self.update_task_field("status", status)
-        update = {"$push": {"service": {"name": status, "elapsed": float(elapsed)}}}
-        utils.conn_db('task').update_one(self.query, update)
-
-    def update_task_field(self, field = None, value = None):
-        update = {"$set": {field: value}}
-        utils.conn_db('task').update_one(self.query, update)
+            self.user_target_site_set.add(x)
 
     def work(self):
-
+        # 对目标进行预先处理
         self.set_relay_targets()
+        self.pre_set_site()
+
+        web_site_fetch = WebSiteFetch(self.task_id, list(self.user_target_site_set), self.options)
+        web_site_fetch.run()
+        self.available_sites = web_site_fetch.available_sites
+
         self.init_plugin_name()
-
-        self.update_task_field("status", "fetch site")
-        t1 = time.time()
-        self.find_site()
-        self.fetch_site()
-        elapse = time.time() - t1
-        self.update_services("fetch site", elapse)
-
         if self.options.get("npoc_service_detection"):
             self.update_task_field("status", "npoc_service_detection")
             t1 = time.time()
@@ -220,14 +192,7 @@ class RiskCruising(CommonTask):
             elapse = time.time() - t1
             self.update_services("PoC", elapse)
 
-        if self.options.get("file_leak"):
-            self.update_task_field("status", "file_leak")
-            t1 = time.time()
-            self.file_leak()
-            elapse = time.time() - t1
-            self.update_services("file_leak", elapse)
-
-        self.insert_task_stat()
+        self.common_run()
 
     def run(self):
         try:

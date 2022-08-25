@@ -114,7 +114,7 @@ class ARLAssetDomain(ARLResource):
             'search_engines': False,
             'ssl_cert': False,
             'fofa_search': False,
-            'crtsh_search': False,
+            'dns_query_plugin': False,
             'related_scope_id': scope_id
         }
 

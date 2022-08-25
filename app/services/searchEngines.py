@@ -126,64 +126,6 @@ class BingSearch(object):
         return urls
 
 
-class DogeSearch():
-    def __init__(self, keyword=None, page_num=6):
-        self.search_url = "https://dogedoge.com/results?q={keyword}&p={page}"
-        self.num_pattern = re.compile(r'约 ([\d,]*) 条结果')
-        self.pq_query = "h2.result__title a.result__a"
-        self.keyword = keyword
-        self.page_num = page_num
-        self.base_search_url = 'https://www.dogedoge.com/'
-        self.default_interval = 0.2
-        self.search_result_num = 0
-
-    def result_num(self):
-        url = self.search_url.format(page=0, keyword=quote(self.keyword))
-        #logger.info("search url {}".format(url))
-        html = utils.http_req(url, allow_redirects=True).text
-        self.first_html = html
-        result = re.findall(self.num_pattern, html)
-        if not result:
-            return 0
-        num = int("".join(result[0].strip().split(",")))
-        self.search_result_num = num
-        return num
-
-    def match_urls(self, html):
-        dom = pq(html)
-        result_items = dom(self.pq_query).items()
-        urls_result = [urljoin(self.base_search_url, item.attr("href")) for item in result_items]
-        urls = set()
-        if urls_result:
-            for u in urls_result:
-                try:
-                    resp = utils.http_req(u, "head", allow_redirects=False, verify=False)
-                    real_url = resp.headers.get('Location')
-                    if real_url:
-                        urls.add(real_url)
-                except Exception as e:
-                    continue
-        return list(urls)
-
-    def run(self):
-        self.result_num()
-        logger.info("doge search {} results found for keyword {}".format(self.search_result_num, self.keyword))
-        urls = []
-        for page in range(1, min(int(self.search_result_num / 10) + 2, self.page_num + 1)):
-            if page == 1:
-                _urls = self.match_urls(self.first_html)
-                urls.extend(_urls)
-                logger.info("doge search first url result {}".format(len(_urls) ))
-            else:
-                time.sleep(self.default_interval)
-                url = self.search_url.format(page=page, keyword=quote(self.keyword))
-                html = utils.http_req(url, allow_redirects=True).text
-                _urls = self.match_urls(html)
-                logger.info("doge search url {}, result {}".format(url, len(_urls)))
-                urls.extend(_urls)
-        return urls
-
-
 def baidu_search(domain, page_num=6):
     keyword = "site:{}".format(domain)
     b = BaiduSearch(keyword, page_num)
@@ -211,19 +153,62 @@ def bing_search(domain, page_num=6):
     return utils.rm_similar_url(urls)
 
 
-def doge_search(domain, page_num=3):
-    urls = []
-    keyword = "site:{}".format(domain)
-    b = DogeSearch(keyword, page_num=page_num)
-    urls.extend(b.run())
+class SearchEngines(object):
+    # *** 调用搜索引擎查找URL
+    def __init__(self, sites):
+        self.engines = [bing_search, baidu_search]
+        self.domain_map_site = dict()
+        self.domain_map_url = dict()
+        self.site_map_url = dict()
+        self.sites = sites
 
-    if b.search_result_num > 1000 and len(urls) > 30:
-        _keyword = "intext:login|admin|manage|console|管理|后台|登陆|平台|用户名|密码|账号 | inurl:admin|login|manage|env|dashboard|api|console|system|管理|后台|登陆|平台"
-        keyword = "site:{} {}".format(domain, _keyword)
-        b = DogeSearch(keyword, page_num=1)
-        urls.extend(b.run())
-    urls = [u for u in urls if domain in urlparse(u).netloc]  # 包含过滤
-    return utils.rm_similar_url(urls)
+    def run(self):
+        cnt = 0
+        for site in self.sites:
+            domain = utils.get_hostname(site).split(":")[0]
+
+            if domain not in self.domain_map_site:
+                self.domain_map_site[domain] = [site]
+            else:
+                self.domain_map_site[domain].append(site)
+
+            cnt += 1
+            if domain not in self.domain_map_url:
+                logger.info("[{}/{}] start SearchEngines  work on {}".format(cnt, len(self.sites), site))
+                urls = self.work(domain)
+                logger.info("found url {}, by {}".format(len(urls), domain ))
+                self.domain_map_url[domain] = urls
+
+        for site in self.sites:
+            domain = utils.get_hostname(site).split(":")[0]
+            urls = self.domain_map_url.get(domain)
+            for url in urls:
+                if utils.same_netloc(site, url):
+                    if urlparse(url).path == "/" or (not urlparse(url).path):
+                        continue
+
+                    if site not in self.site_map_url:
+                        self.site_map_url[site] = [url]
+                    else:
+                        self.site_map_url[site].append(url)
+
+        return self.site_map_url
+
+    def work(self, domain):
+        urls = []
+        for engine in self.engines:
+            try:
+                urls.extend(engine(domain))
+                urls = utils.rm_similar_url(urls)
+            except Exception as e:
+                logger.exception(e)
+
+        return urls
+
+
+def search_engines(sites):
+    s = SearchEngines(sites)
+    return s.run()
 
 
 if __name__ == '__main__':

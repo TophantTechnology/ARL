@@ -12,12 +12,11 @@ logger = utils.get_logger()
 domain_monitor_options = {
     'domain_brute': True,
     'domain_brute_type': 'big',
-    'riskiq_search': True,
     'alt_dns': False,
     'arl_search': True,
     'port_scan_type': 'test',
     'port_scan': True,
-    'crtsh_search': True,
+    'dns_query_plugin': True,
     'site_identify': False
 }
 
@@ -40,7 +39,7 @@ def add_job(domain, scope_id, options=None, interval=60 * 1, name="", scope_type
     disable_options = {
         "domain_brute": False,
         "alt_dns": False,
-        "riskiq_search": False,
+        "dns_query_plugin": False,
         "arl_search": False
     }
 

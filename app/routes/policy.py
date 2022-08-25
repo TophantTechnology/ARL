@@ -38,9 +38,8 @@ domain_config_fields = ns.model('domainConfig', {
     "domain_brute": fields.Boolean(description="域名爆破", default=True),
     "domain_brute_type": fields.String(description="域名爆破类型(big)", example="big"),
     "alt_dns": fields.Boolean(description="DNS字典智能生成", default=True),
-    "riskiq_search": fields.Boolean(description="RiskIQ 调用", default=True),
     "arl_search": fields.Boolean(description="ARL 历史查询", default=True),
-    "crtsh_search": fields.Boolean(description="crtsh 查询", default=True)
+    "dns_query_plugin": fields.Boolean(description="域名插件查询", default=False)
 })
 
 '''IP 相关配置选项'''
@@ -64,6 +63,7 @@ site_config_fields = ns.model('siteConfig', {
     "site_capture": fields.Boolean(description="站点截图", default=False),
     "search_engines": fields.Boolean(description="搜索引擎调用", default=False),
     "site_spider": fields.Boolean(description="站点爬虫", default=False),
+    "nuclei_scan": fields.Boolean(description="nuclei 扫描", default=False),
 })
 
 
@@ -178,6 +178,9 @@ class AddARLPolicy(ARLResource):
         default_dict.update(arg_dict)
 
         for x in default_dict:
+            if x not in default_module:
+                continue
+
             default_dict[x] = default_module[x].format(default_dict[x])
 
         return default_dict

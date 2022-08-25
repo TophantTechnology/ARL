@@ -1,0 +1,5 @@
+/*!
+  * vue-router v3.4.2
+  * (c) 2020 Evan You
+  * @license MIT
+  */

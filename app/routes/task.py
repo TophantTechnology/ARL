@@ -31,14 +31,12 @@ base_search_task_fields = {
     'options.site_identify': fields.Boolean(description="是否开启站点识别"),
     'options.file_leak': fields.Boolean(description="是否开启文件泄露扫描"),
     'options.alt_dns': fields.Boolean(description="是否开启DNS字典智能生成"),
-    # 'options.github_search_domain': fields.Boolean(description="是否开启GitHub搜索"),
-    # 'options.fetch_api_path': fields.Boolean(description="是否开启JS PATH收集"),
     'options.search_engines': fields.Boolean(description="是否开启搜索引擎调用"),
     'options.site_spider': fields.Boolean(description="是否开启站点爬虫"),
-    'options.riskiq_search': fields.Boolean(description="是否开启 Riskiq 调用"),
     'options.arl_search': fields.Boolean(description="是否开启 ARL 历史查询"),
-    'options.crtsh_search': fields.Boolean(description="是否开启 crt.sh 查询"),
+    'options.dns_query_plugin': fields.Boolean(description="是否开启域名插件查询"),
     'options.skip_scan_cdn_ip': fields.Boolean(description="是否跳过CDN IP端口扫描"),
+    'options.nuclei_scan': fields.Boolean(description="是否开启nuclei 扫描"),
     'options.findvhost': fields.Boolean(description="是否开启Host碰撞检测")
 
 }
@@ -63,13 +61,13 @@ add_task_fields = ns.model('AddTask', {
     "search_engines": fields.Boolean(example=False),
     "site_spider": fields.Boolean(example=False),
     "arl_search": fields.Boolean(example=False),
-    "riskiq_search": fields.Boolean(example=False),
     "alt_dns": fields.Boolean(),
     "github_search_domain": fields.Boolean(),
     "ssl_cert": fields.Boolean(),
     "fetch_api_path": fields.Boolean(),
-    "crtsh_search": fields.Boolean(example=True, default=True),
+    "dns_query_plugin": fields.Boolean(example=False, default=False),
     "skip_scan_cdn_ip": fields.Boolean(),
+    "nuclei_scan": fields.Boolean(description="nuclei 扫描", example=False, default=False),
     "findvhost": fields.Boolean()
 })
 

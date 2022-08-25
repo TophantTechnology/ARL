@@ -27,7 +27,7 @@ WORKDIR /code
 
 RUN set -x;\
     apt-get update \
-    && apt-get install -y python3.8 python3-pip curl nginx nmap \
+    && apt-get install -y python3.8 python3-pip curl nginx nmap wget unzip \
     && ln -s /usr/bin/python3.8 /usr/bin/python3.6 \
     && useradd -s /bin/false nginx \
     && nmap -v
@@ -60,6 +60,11 @@ RUN pip3 install -r requirements.txt
 ## 安装 NPoC 的依赖
 WORKDIR /opt/ARL-NPoC/
 RUN pip3 install -r requirements.txt
+
+## 安装nuclei
+RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.7.5/nuclei_2.7.5_linux_arm64.zip
+RUN unzip nuclei_2.7.5_linux_arm64.zip && mv nuclei /usr/bin/ && rm -f nuclei_2.7.5_linux_arm64.zip
+RUN nuclei
 
 ## 切换工作目录
 WORKDIR /code
