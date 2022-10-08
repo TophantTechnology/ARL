@@ -18,3 +18,5 @@ openpyxl==3.0.0
 gunicorn==20.1.0
 psutil==5.7.2
 crontab==0.23.0
+Jinja2==2.11.3
+MarkupSafe==2.0.1
