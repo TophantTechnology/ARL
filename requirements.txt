@@ -11,7 +11,7 @@ dnspython==1.15.0
 tld==0.9.1
 PyYAML==5.1
 geoip2==2.9.0
-pyOpenSSL==21.0.0
+pyOpenSSL==22.0.0
 mmh3==2.5.1
 pyquery==1.4.1
 openpyxl==3.0.0
