@@ -1,5 +1,5 @@
 from flask import  make_response
-from flask_restplus import Resource, Namespace
+from flask_restx import Resource, Namespace
 import os
 from app.config import Config
 from app.utils import get_logger

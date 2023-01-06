@@ -32,7 +32,7 @@ class DNSQueryBase(object):
         try:
             domains = self.sub_domains(target)
         except Exception as e:
-            self.logger.error(e)
+            self.logger.error("{} error: {}".format(self.source_name, e))
             return []
 
         if not isinstance(domains, list):
@@ -81,6 +81,8 @@ class DNSQueryBase(object):
     "source": "crtsh"
 }]
 """
+
+
 # *********
 
 
@@ -113,13 +115,22 @@ def run_query_plugin(target, sources=None):
                     logger.warning("{} config {} is not dict".format(source_name, source_kwargs))
                     continue
 
-                # 判断是否为空，为空就跳过 init_key 调用
-                if all(source_kwargs.values()):
-                    p.init_key(**source_kwargs)
-                else:
-                    logger.debug("skip {}, config is not set".format(source_name))
-                    continue
+                # 插件是否启用， 没有配置 enable 这个字段默认启用
+                plugin_enable_flag = source_kwargs.pop("enable", None)
+                if plugin_enable_flag is not None:
+                    if not plugin_enable_flag:
+                        logger.debug("skip {}, enable is set false".format(source_name))
+                        continue
 
+                # 判断是否为空，为空就跳过 init_key 调用
+                if source_kwargs:
+                    if all(source_kwargs.values()):
+                        p.init_key(**source_kwargs)
+                    else:
+                        logger.debug("skip {}, config is not set".format(source_name))
+                        continue
+
+            logger.debug("run {} target:{}".format(source_name, target))
             results = p.query(target)
             for result in results:
                 if result in subdomains:
@@ -136,7 +147,7 @@ def run_query_plugin(target, sources=None):
             if "please set fofa key" in error_str:
                 logger.debug(error_str)
             else:
-                logger.error(str(e))
+                logger.error("{} error {} {}".format(p.source_name, type(e), str(e)))
 
     t2 = time.time()
     logger.info("{} subdomains result {} ({:.2f}s)".format(target, len(subdomains), t2 - t1))

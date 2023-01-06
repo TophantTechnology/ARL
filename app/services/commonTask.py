@@ -1,11 +1,11 @@
 import time
-
+from urllib.parse import urlparse
 from bson import ObjectId
 from app import utils
 from app import services
 from app.config import Config
+from app.helpers import get_url_by_task_id
 from app.modules import CollectSource, WebSiteFetchStatus, WebSiteFetchOption
-from app.services.searchEngines import search_engines
 from app.services.nuclei_scan import nuclei_scan
 logger = utils.get_logger()
 from app.services import fetchCert, run_risk_cruising, run_sniffer
@@ -151,28 +151,20 @@ class WebSiteFetch(object):
         capture_save_dir = Config.SCREENSHOT_DIR + "/" + self.task_id
         services.site_screenshot(self.available_sites, concurrency=6, capture_dir=capture_save_dir)
 
-    def search_engines(self):
-        # *** 调用搜索引擎，查找URL
-        self.search_engines_result = search_engines(self.available_sites)
-        for site in self.search_engines_result:
-            target_urls = self.search_engines_result[site]
-            page_map = services.page_fetch(target_urls)
-
-            for url in page_map:
-                self.page_url_set.add(url)
-                item = build_url_item(url, self.task_id, source=CollectSource.SITESPIDER)
-                item.update(page_map[url])
-                utils.conn_db('url').insert_one(item)
-
     def site_spider(self):
         # *** 执行静态爬虫
-        entry_urls_list = []
+        entry_urls_list = []  # 是一个二维数组
         for site in self.available_sites:
+            o = urlparse(site)
+            if o.path != "":
+                continue
+
             entry_urls = [site]
             entry_urls.extend(self.search_engines_result.get(site, []))
             entry_urls_list.append(entry_urls)
 
         site_spider_result = services.site_spider_thread(entry_urls_list)
+        spider_urls = []
         for site in site_spider_result:
             target_urls = site_spider_result[site]
             new_target_urls = []
@@ -186,7 +178,11 @@ class WebSiteFetch(object):
             if not new_target_urls:
                 continue
 
-            page_map = services.page_fetch(new_target_urls)
+            spider_urls.extend(new_target_urls)
+
+        if len(spider_urls) > 0:
+            logger.info("spider_urls {} task_id:{}".format( len(spider_urls), self.task_id))
+            page_map = services.page_fetch(spider_urls)
             for url in page_map:
                 item = build_url_item(url, self.task_id, source=CollectSource.SITESPIDER)
                 item.update(page_map[url])
@@ -219,8 +215,8 @@ class WebSiteFetch(object):
 
         return self._poc_sites
 
-    def risk_cruising(self):
-        # *** 运行PoC任务
+    def risk_cruising(self, npoc_service_target_set: set):
+        # *** 运行PoC任务, 需要自己在外层手动调用
         poc_config = self.options.get("poc_config", [])
         plugins = []
         for info in poc_config:
@@ -228,7 +224,12 @@ class WebSiteFetch(object):
                 continue
             plugins.append(info["plugin_name"])
 
-        result = run_risk_cruising(plugins=plugins, targets=self.poc_sites)
+        poc_targets = self.poc_sites
+
+        if npoc_service_target_set is not None:
+            poc_targets = self.poc_sites | npoc_service_target_set
+
+        result = run_risk_cruising(plugins=plugins, targets=poc_targets)
         for item in result:
             item["task_id"] = self.task_id
             item["save_date"] = utils.curr_date()
@@ -254,6 +255,18 @@ class WebSiteFetch(object):
 
         logger.info("end run {} ({:.2f}s), {}".format(name, elapse, self.__str__()))
 
+    def update_page_url_set(self):
+        # page_url_set 从数据库读取搜索引擎爬取到的URL
+        urls = get_url_by_task_id(self.task_id)
+        self.page_url_set |= set(urls)
+
+        for u in self.page_url_set:
+            o = urlparse(u)
+            ret_url = "{}://{}".format(o.scheme, o.netloc)
+            entry_urls = self.search_engines_result.get(ret_url, [])
+            entry_urls.append(u)
+            self.search_engines_result[ret_url] = entry_urls
+
     def run(self):
         # *** 对站点进行基本信息的获取
         self.run_func(WebSiteFetchStatus.FETCH_SITE, self.fetch_site)
@@ -269,25 +282,14 @@ class WebSiteFetch(object):
         if self.options.get(WebSiteFetchOption.SITE_CAPTURE):
             self.run_func(WebSiteFetchStatus.SITE_CAPTURE, self.site_screenshot)
 
-        """ *** 调用搜索引擎发现URL """
-        if self.options.get(WebSiteFetchOption.SEARCH_ENGINES):
-            self.run_func(WebSiteFetchStatus.SEARCH_ENGINES, self.search_engines)
-
         """ ***调用站点爬虫发现URL """
         if self.options.get(WebSiteFetchOption.SITE_SPIDER):
+            self.update_page_url_set()
             self.run_func(WebSiteFetchStatus.SITE_SPIDER, self.site_spider)
 
         """ *** 对站点进行文件目录爆破 """
         if self.options.get(WebSiteFetchOption.FILE_LEAK):
             self.run_func(WebSiteFetchStatus.FILE_LEAK, self.file_leak)
-
-        """ *** 对站点运行NPOC """
-        if self.options.get(WebSiteFetchOption.POC_RUN):
-            self.run_func(WebSiteFetchStatus.POC_RUN, self.risk_cruising)
-
-        """ *** 对站点运行NPOC """
-        if self.options.get(WebSiteFetchOption.POC_RUN):
-            self.run_func(WebSiteFetchStatus.POC_RUN, self.risk_cruising)
 
         """ *** 对站点运行 nuclei """
         if self.options.get(WebSiteFetchOption.NUCLEI_SCAN):

@@ -6,11 +6,13 @@ from xing.conf import Conf as npoc_conf
 from app import utils
 from app.modules import PoCCategory
 from app.config import Config
+
 logger = utils.get_logger()
 
 
 class NPoC(object):
     """docstring for ClassName"""
+
     def __init__(self, concurrency=6, tmp_dir="./"):
         super(NPoC, self).__init__()
         self._plugins = None
@@ -185,7 +187,7 @@ def run_sniffer(targets):
     x = n.plugin_name_list
     new_targets = []
 
-    ##跳过80 和 443 的识别
+    #  跳过80 和 443 的识别
     for t in targets:
         t = t.strip()
         if t.endswith(":80"):
@@ -216,5 +218,3 @@ def run_sniffer(targets):
         ret.append(item)
 
     return ret
-
-

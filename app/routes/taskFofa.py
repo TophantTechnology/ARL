@@ -1,4 +1,4 @@
-from flask_restplus import Namespace, fields
+from flask_restx import Namespace, fields
 from app.utils import get_logger, auth, build_ret, conn_db
 from app.modules import ErrorMsg, CeleryAction
 from app.services.fofaClient import fofa_query, fofa_query_result

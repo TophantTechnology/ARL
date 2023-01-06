@@ -10,18 +10,18 @@ logger = utils.get_logger()
 class BaiduSearch(object):
     def __init__(self, keyword=None, page_num=6):
         self.search_url = "https://www.baidu.com/s?rn=100&pn={page}&wd={keyword}"
-        self.num_pattern = re.compile(r'百度为您找到相关结果约([\d,]*)个')
+        self.num_pattern = re.compile(r'百度为您找到相关结果约?([\d,]*)个')
         self.first_html = ""
         self.keyword = keyword
         self.page_num = page_num
         self.pq_query = "#content_left h3.t a"
+        self.headers = {"Accept-Language": "zh-cn"}
         self.search_result_num = 0
         self.default_interval = 3
 
     def result_num(self):
         url = self.search_url.format(page=0, keyword=quote(self.keyword))
-
-        html = utils.http_req(url).text
+        html = utils.http_req(url, headers=self.headers).text
         self.first_html = html
         result = re.findall(self.num_pattern, html)
         if not result:
@@ -33,6 +33,10 @@ class BaiduSearch(object):
         return num
 
     def match_urls(self, html):
+        result = re.findall(self.num_pattern, html)
+        if not result:
+            raise Exception("获取百度结果异常")
+
         dom = pq(html)
         result_items = dom(self.pq_query).items()
         urls_result = [item.attr("href") for item in result_items]
@@ -51,12 +55,14 @@ class BaiduSearch(object):
         return list(urls)
 
     def run(self):
-        logger.info("BaiduSearch, sleep 5 on {}".format(self.keyword))
-        time.sleep(5)
-
         self.result_num()
         logger.info("baidu search {} results found for keyword {}".format(self.search_result_num, self.keyword))
         urls = []
+
+        # 没有找到直接return
+        if self.search_result_num == 0:
+            return urls
+
         for page in range(1, min(int(self.search_result_num / 10) + 2, self.page_num + 1)):
             if page == 1:
                 _urls = self.match_urls(self.first_html)
@@ -65,7 +71,7 @@ class BaiduSearch(object):
             else:
                 time.sleep(self.default_interval)
                 url = self.search_url.format(page=(page - 1) * 10, keyword=quote(self.keyword))
-                html = utils.http_req(url).text
+                html = utils.http_req(url, headers=self.headers).text
                 _urls = self.match_urls(html)
                 logger.info("baidu search url {}, result {}".format(url, len(_urls)))
                 urls.extend(_urls)
@@ -74,29 +80,45 @@ class BaiduSearch(object):
 
 class BingSearch(object):
     def __init__(self, keyword=None, page_num=6):
-        self.search_url = "https://cn.bing.com/search?q={keyword}&go=Search&qs=ds&form=QBRE&first={page}"
-        self.num_pattern = re.compile(r'<span class="sb_count">([\d,]*) (results|条结果)</span>')
+        self.search_url = "https://cn.bing.com/search?q={keyword}&qs=n&form=QBRE&sp=-1&first={page}"
+        self.num_pattern = re.compile(r'<span class="sb_count">([^<]+)</span>')
         self.pq_query = "#b_results > li h2 > a"
         self.keyword = keyword
         self.page_num = page_num
-        self.cookies = {'_SS': '1'}
+        self.headers = {"Accept-Language": "zh-cn"}
         self.default_interval = 3
         self.search_result_num = 0
         self.first_html = ""
 
     def result_num(self):
-        num = 0
         url = self.search_url.format(page=1, keyword=quote(self.keyword))
-
-        html = utils.http_req(url, cookies=self.cookies).text
+        html = utils.http_req(url, headers=self.headers).text
         self.first_html = html
         result = re.findall(self.num_pattern, html)
+
         if result:
-            num = int("".join(result[0][0].split(",")))
-        self.search_result_num = num
-        return num
+            # 第一种情况
+            result_num = re.findall(r"共 ([\d,]*) 条", result[0])
+            if result_num:
+                num = int("".join(result_num[0].split(",")))
+                self.search_result_num = num
+
+            # 第二种情况
+            else:
+                result_num_2 = re.findall(r" ([\d,]*) 个结果", result[0])
+                if result_num_2:
+                    num = int("".join(result_num_2[0].split(",")))
+                    self.search_result_num = num
+        else:
+            logger.warning("Unable to get bing search results， {}".format(self.keyword))
+            return 0
+
+        return self.search_result_num
 
     def match_urls(self, html):
+        if "搜索</title>" not in html:
+            raise Exception("获取Bing结果异常")
+
         dom = pq(html)
         result_items = dom(self.pq_query).items()
         urls_result = [item.attr("href") for item in result_items]
@@ -106,11 +128,14 @@ class BingSearch(object):
         return list(urls)
 
     def run(self):
-        logger.info("BingSearch, sleep 5 on {}".format(self.keyword))
-        time.sleep(5)
         self.result_num()
         logger.info("bing search {} results found for keyword {}".format(self.search_result_num, self.keyword))
         urls = []
+
+        # 没有找到直接return
+        if self.search_result_num == 0:
+            return urls
+
         for page in range(1, min(int(self.search_result_num / 10) + 2, self.page_num + 1)):
             if page == 1:
                 _urls = self.match_urls(self.first_html)
@@ -119,7 +144,7 @@ class BingSearch(object):
             else:
                 time.sleep(self.default_interval)
                 url = self.search_url.format(page=(page - 1) * 10, keyword=quote(self.keyword))
-                html = utils.http_req(url, cookies=self.cookies).text
+                html = utils.http_req(url, headers=self.headers).text
                 _urls = self.match_urls(html)
                 logger.info("bing search url {}, result {}".format(url, len(_urls)))
                 urls.extend(_urls)
@@ -134,17 +159,18 @@ def baidu_search(domain, page_num=6):
     return utils.rm_similar_url(urls)
 
 
-def bing_search(domain, page_num=6):
+def bing_search(domain, page_num=5):
     urls = []
     keyword = "site:{}".format(domain)
     b = BingSearch(keyword, page_num)
     urls.extend(b.run())
-    if b.search_result_num > 1000 and len(urls) > 30:
-        keywords = ["admin", "管理", "后台", "登陆", "密码", "login", "manage", "env", "dashboard", "api",
+    if b.search_result_num > 1000 and len(urls) > 25:
+        keywords = ["admin", "管理|后台", "登陆|密码", "login", "manage", "dashboard", "api",
                     "console"]
         for k in keywords:
             keyword = "site:{} {}".format(domain, k)
             try:
+                time.sleep(15)
                 b = BingSearch(keyword, page_num=1)
                 urls.extend(b.run())
             except Exception as e:
@@ -155,50 +181,15 @@ def bing_search(domain, page_num=6):
 
 class SearchEngines(object):
     # *** 调用搜索引擎查找URL
-    def __init__(self, sites):
+    def __init__(self, base_domain):
         self.engines = [bing_search, baidu_search]
-        self.domain_map_site = dict()
-        self.domain_map_url = dict()
-        self.site_map_url = dict()
-        self.sites = sites
+        self.base_domain = base_domain
 
     def run(self):
-        cnt = 0
-        for site in self.sites:
-            domain = utils.get_hostname(site).split(":")[0]
-
-            if domain not in self.domain_map_site:
-                self.domain_map_site[domain] = [site]
-            else:
-                self.domain_map_site[domain].append(site)
-
-            cnt += 1
-            if domain not in self.domain_map_url:
-                logger.info("[{}/{}] start SearchEngines  work on {}".format(cnt, len(self.sites), site))
-                urls = self.work(domain)
-                logger.info("found url {}, by {}".format(len(urls), domain ))
-                self.domain_map_url[domain] = urls
-
-        for site in self.sites:
-            domain = utils.get_hostname(site).split(":")[0]
-            urls = self.domain_map_url.get(domain)
-            for url in urls:
-                if utils.same_netloc(site, url):
-                    if urlparse(url).path == "/" or (not urlparse(url).path):
-                        continue
-
-                    if site not in self.site_map_url:
-                        self.site_map_url[site] = [url]
-                    else:
-                        self.site_map_url[site].append(url)
-
-        return self.site_map_url
-
-    def work(self, domain):
         urls = []
         for engine in self.engines:
             try:
-                urls.extend(engine(domain))
+                urls.extend(engine(self.base_domain))
                 urls = utils.rm_similar_url(urls)
             except Exception as e:
                 logger.exception(e)
@@ -206,8 +197,8 @@ class SearchEngines(object):
         return urls
 
 
-def search_engines(sites):
-    s = SearchEngines(sites)
+def search_engines(base_domain):
+    s = SearchEngines(base_domain)
     return s.run()
 
 

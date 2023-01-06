@@ -1,4 +1,4 @@
-from flask_restplus import fields, Namespace
+from flask_restx import fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
 
@@ -7,9 +7,9 @@ ns = Namespace('stat_finger', description="指纹统计信息")
 logger = get_logger()
 
 base_search_fields = {
-    'finger_name': fields.String(required=False, description="指纹名称"),
+    'name': fields.String(required=False, description="指纹名称"),  # 字段名没搞好
     "task_id": fields.String(description="任务 ID"),
-    "finger_count": fields.Integer(description="数目"),
+    "cnt": fields.Integer(description="数目"),
 }
 
 base_search_fields.update(base_query_fields)

@@ -17,6 +17,11 @@ class TestDomain(unittest.TestCase):
         self.assertTrue(len(data) == 2)
         self.assertTrue(len(data[0]["finger"]) >= 1)
 
+    def test_fetch_data(self):
+        sites = ["http://www.baidu.com/"]
+        data = services.fetch_site(sites, concurrency=2)
+        print(data)
+
 
 if __name__ == '__main__':
     unittest.main()

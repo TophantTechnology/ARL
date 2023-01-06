@@ -98,7 +98,7 @@ def get_ip(domain, log_flag = True):
     logger = get_logger()
     ips = []
     try:
-        answers = dns.resolver.query(domain, 'A')
+        answers = dns.resolver.resolve(domain, 'A')
         for rdata in answers:
             if rdata.address == '0.0.0.1':
                 continue
@@ -118,7 +118,7 @@ def get_cname(domain, log_flag=True):
     logger = get_logger()
     cnames = []
     try:
-        answers = dns.resolver.query(domain, 'CNAME')
+        answers = dns.resolver.resolve(domain, 'CNAME')
         for rdata in answers:
             cnames.append(str(rdata.target).strip(".").lower())
     except dns.resolver.NoAnswer as e:

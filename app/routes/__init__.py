@@ -1,5 +1,5 @@
 import re
-from flask_restplus import Resource, Api, reqparse, fields
+from flask_restx import Resource, Api, reqparse, fields
 from app import modules
 from bson.objectid import ObjectId
 from datetime import datetime
@@ -15,7 +15,7 @@ base_query_fields = {
 }
 
 # 只能用等号进行mongo查询的字段
-EQUAL_FIELDS = ["task_id", "task_tag", "ip_type", "scope_id"]
+EQUAL_FIELDS = ["task_id", "task_tag", "ip_type", "scope_id", "type"]
 
 
 class ARLResource(Resource):

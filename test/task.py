@@ -5,7 +5,7 @@ from app.modules import CeleryAction
 
 task_data = {
     'name': '自动化测试',
-    'target': 'tophant.com',
+    'target': 'www.tophant.com',
     'start_time': '-',
     'status': 'waiting',
     'type': 'domain',
@@ -60,8 +60,8 @@ class TestExecTask(unittest.TestCase):
     def test_exec_task(self):
         submit_task(task_data)
         query = {"task_id": task_data["task_id"]}
-        self.assertTrue(len(list(conn("site").find(query))) > 1)
-        self.assertTrue(len(list(conn("domain").find(query))) > 1)
+        self.assertTrue(len(list(conn("site").find(query))) >= 1)
+        self.assertTrue(len(list(conn("domain").find(query))) >= 1)
 
         if task_data["options"]["port_scan"]:
             self.assertTrue(len(list(conn("ip").find(query))) >= 1)

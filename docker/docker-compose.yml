@@ -6,7 +6,7 @@ volumes:
 
 services:
     web:
-        image: tophant/arl:latest
+        image: tophant/arl:${ARL_VERSION:-latest}
         container_name: arl_web
         restart: unless-stopped
         depends_on:
@@ -21,13 +21,13 @@ services:
           - ./config-docker.yaml:/code/app/config.yaml
           - ./image:/code/app/tmp_screenshot
           - ./poc:/opt/ARL-NPoC/xing/plugins/upload_poc
-        entrypoint: ["sh", "-c", "gen_crt.sh; nginx; wait-for-it.sh mongodb:27017; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
+        entrypoint: ["sh", "-c", "gen_crt.sh; nginx; wait-for-it.sh mongodb:27017; wait-for-it.sh rabbitmq:5672; gunicorn -b 0.0.0.0:5003 app.main:arl_app -w 3 --access-logfile arl_web.log"]
         environment:
           - LANG=en_US.UTF-8
           - TZ=Asia/Shanghai
 
     worker:
-        image: tophant/arl:latest
+        image: tophant/arl:${ARL_VERSION:-latest}
         container_name: arl_worker
         restart: unless-stopped
         depends_on:
@@ -47,7 +47,7 @@ services:
           - TZ=Asia/Shanghai
 
     scheduler:
-      image: tophant/arl:latest
+      image: tophant/arl:${ARL_VERSION:-latest}
       container_name: arl_scheduler
       restart: unless-stopped
       depends_on:
@@ -55,7 +55,7 @@ services:
         - rabbitmq
       volumes:
         - ./config-docker.yaml:/code/app/config.yaml
-      entrypoint: [ "sh", "-c", "wait-for-it.sh mongodb:27017; python3.6 -m app.scheduler" ]
+      entrypoint: [ "sh", "-c", "wait-for-it.sh mongodb:27017; wait-for-it.sh rabbitmq:5672; python3.6 -m app.scheduler" ]
       environment:
         - LANG=en_US.UTF-8
         - TZ=Asia/Shanghai

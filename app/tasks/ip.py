@@ -1,7 +1,7 @@
 from bson.objectid import  ObjectId
 import time
 from app import services
-from app.modules import ScanPortType, TaskStatus, CollectSource
+from app.modules import ScanPortType, TaskStatus
 from app.services import fetchCert, run_risk_cruising, run_sniffer
 from app import utils
 from app.services.commonTask import CommonTask, BaseUpdateTask, WebSiteFetch
@@ -266,13 +266,14 @@ class IPTask(CommonTask):
         elapse = time.time() - t1
         base_update.update_services("find_site", elapse)
 
-        web_site_fetch = WebSiteFetch(self.task_id, self.site_list, self.options)
+        web_site_fetch = WebSiteFetch(task_id=self.task_id,
+                                      sites=self.site_list,
+                                      options=self.options)
         web_site_fetch.run()
 
         # 监控任务同步站点信息
         if self.task_tag == 'monitor':
             self.async_site_info(web_site_fetch.site_info_list)
-
 
         """服务识别（python）实现"""
         if self.options.get("npoc_service_detection"):
@@ -281,6 +282,14 @@ class IPTask(CommonTask):
             self.npoc_service_detection()
             elapse = time.time() - t1
             base_update.update_services("npoc_service_detection", elapse)
+
+        """ *** npoc 调用 """
+        if self.options.get("poc_config"):
+            base_update.update_task_field("status", "poc_run")
+            t1 = time.time()
+            web_site_fetch.risk_cruising(self.npoc_service_target_set)
+            elapse = time.time() - t1
+            base_update.update_services("poc_run", elapse)
 
         """弱口令爆破服务"""
         if self.options.get("brute_config"):

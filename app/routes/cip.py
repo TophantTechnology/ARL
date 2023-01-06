@@ -1,4 +1,4 @@
-from flask_restplus import Resource, Api, reqparse, fields, Namespace
+from flask_restx import Resource, Api, reqparse, fields, Namespace
 from app.utils import get_logger, auth
 from . import base_query_fields, ARLResource, get_arl_parser
 

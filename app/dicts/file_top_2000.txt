@@ -262,6 +262,7 @@ back.tar.bz2
 backup
 backup.7z
 backup.gz
+backup.html
 backup.rar
 backup.sh
 backup.sql
@@ -483,6 +484,7 @@ ehcache
 elasticsearch
 elk
 elmah.axd
+email.html
 env
 env.json
 env.sh
@@ -498,6 +500,8 @@ etc/shadow
 eureka-client/
 eureka-server/
 eureka/
+eureka/apps
+eureka/status
 eurekaServer/
 eval
 example.html
@@ -609,6 +613,7 @@ jmx-console/HtmlAdaptor
 js/extjs/examples/feed-viewer/view.html
 js/extjs/examples/index.html
 js/Gruntfile.js
+js/log.js
 js/Uploadify.js
 json/list
 jspspy.jsp
@@ -705,11 +710,13 @@ old.tar.gz
 old.tgz
 old.zip
 onealert
+online-users.html
 ooxx.asp
 ooxx.aspx
 ooxx.jsp
 ooxx.jspx
 ooxx.php
+openapi.json
 orders.log
 out
 output.tar.gz
@@ -748,6 +755,7 @@ pms
 pods
 pom.xml
 pprof
+preview.html
 printenv
 process.bak
 prod/services

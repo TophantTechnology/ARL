@@ -11,24 +11,46 @@ MONGO:
 
 # 利用三方API进行域名收集
 # 测试命令 python3.6 -m test.test_query_plugin [source1] [source2]
+# 域名查询插件配置
 QUERY_PLUGIN:
-  passivetotal: #演示帐号有查询额度限制，请前往 https://community.riskiq.com/ 注册自己的key并替换
-    auth_email: n1un1u2019@qq.com
-    auth_key: 03da3c29cce5152a536bae332f7b03a288154b37a13b93921225d3ade49c9b4c
-  hunter_qax:  # 网站 https://hunter.qianxin.com/
-    api_key:
-    page_size: 100
-    max_page: 5
-  securitytrails: # 网站 https://securitytrails.com/
-    api_key:
-  virustotal: # 网站 https://www.virustotal.com/gui/
-    api_key:
-  quake_360: # 网站 https://quake.360.cn/
-    quake_token:
-    max_size: 500
+  alienvault:
+    enable: true
   certspotter: # https://www.certspotter.com/
     after_id: 0
     max_page: 3
+    enable: true
+  crtsh:
+    enable: true
+  fofa:  # fofa 的key配置在下面
+    enable: true
+  hunter_qax: # 网站 https://hunter.qianxin.com/
+    api_key:
+    page_size: 100
+    max_page: 5
+    enable: false
+  passivetotal: # 请前往 https://community.riskiq.com/ 注册自己的key并替换
+    auth_email:
+    auth_key:
+    enable: false
+  quake_360: # 网站 https://quake.360.cn/
+    quake_token:
+    max_size: 500
+    enable: false
+  rapiddns:
+    enable: true
+  securitytrails: # 网站 https://securitytrails.com/
+    api_key:
+    enable: false
+  threatminer:
+    api_key:
+    enable: false
+  virustotal: # 网站 https://www.virustotal.com/gui/
+    api_key:
+    enable: false
+  zoomeye:
+    api_key:
+    max_page: 20
+    enable: false
 
 
 #GeoIP 数据库文件配置项

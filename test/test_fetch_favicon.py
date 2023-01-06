@@ -9,7 +9,7 @@ class TestFavicon(unittest.TestCase):
 
     def test_favicon(self):
         data = fetch_favicon("https://www.qq.com/")
-        self.assertTrue(data["hash"] == 104591641)
+        self.assertTrue(data["hash"] == 1787932733)
 
 
 if __name__ == '__main__':

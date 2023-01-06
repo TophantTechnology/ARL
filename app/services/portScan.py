@@ -35,10 +35,10 @@ class PortScan:
 
         if self.ports == "0-65535":
             self.max_hostgroup = 8
-            self.min_rate = max(self.min_rate, 400)
+            self.min_rate = max(self.min_rate, 150)
 
             self.nmap_arguments += " -PE -PS{}".format(self.alive_port)
-            self.host_timeout += 60 * 2
+            self.host_timeout += 60 * 5
             self.max_retries = 2
 
         self.nmap_arguments += " --max-rtt-timeout 800ms"

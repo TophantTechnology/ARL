@@ -45,7 +45,7 @@ docker-compose up -d
 或者直接下载`docker-compose`配置文件启动
 ```
 mkdir docker_arl
-wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.5.2/docker.zip
+wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.5.3/docker.zip
 cd docker_arl
 unzip -o docker.zip
 docker-compose pull
@@ -55,7 +55,7 @@ docker-compose up -d
 
 Ubuntu 下可以直接执行 `apt-get install docker.io docker-compose -y` 安装相关依赖
 
-详细说明可以参考: [Docker 环境安装 ARL](https://github.com/TophantTechnology/ARL/wiki/Docker-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85-ARL)
+详细说明可以参考: [Docker 环境安装 ARL](https://tophanttechnology.github.io/ARL-doc/system_install/)
 
 ### 截图
 
@@ -99,7 +99,7 @@ Ubuntu 下可以直接执行 `apt-get install docker.io docker-compose -y` 安�
 | 4    | 端口扫描类型    | ALL：全部端口，TOP1000：常用top 1000端口，TOP100：常用top 100端口，测试：少数几个端口 |
 | 5    | 域名爆破        | 是否开启域名爆破                                                                   |
 | 6    | DNS字典智能生成 | 根据已有的域名生成字典进行爆破                                                      |
-| 7    | 域名查询插件    |  已支持的数据源为11个，`alienvault`, `certspotter`,`crtsh`,`fofa`,`hunter` 等        |
+| 7    | 域名查询插件    |  已支持的数据源为12个，`alienvault`, `certspotter`,`crtsh`,`fofa`,`hunter` 等        |
 | 8    | ARL 历史查询    | 对arl历史任务结果进行查询用于本次任务                                                |
 | 9    | 端口扫描        | 是否开启端口扫描，不开启站点会默认探测80,443                                         |
 | 10   | 服务识别        | 是否进行服务识别，有可能会被防火墙拦截导致结果为空                                     |
@@ -107,7 +107,7 @@ Ubuntu 下可以直接执行 `apt-get install docker.io docker-compose -y` 安�
 | 12   | SSL 证书获取    | 对端口进行SSL 证书获取                                                             |
 | 13   | 跳过CDN       | 对判定为CDN的IP, 将不会扫描端口，并认为80，443是端口是开放的                             |
 | 14   | 站点识别        | 对站点进行指纹识别                                                                 |
-| 15   | 搜索引擎调用    | 利用搜索引擎结果爬取对应的URL                                                       |
+| 15   | 搜索引擎调用    | 利用搜索引擎搜索下发的目标爬取对应的URL和子域名                                                       |
 | 16   | 站点爬虫        | 利用静态爬虫对站点进行爬取对应的URL                                                  |
 | 17   | 站点截图        | 对站点首页进行截图                                                                 |
 | 18   | 文件泄露        | 对站点进行文件泄露检测，会被WAF拦截                                                  |
@@ -174,7 +174,7 @@ chmod +x setup-docker-arl.sh
 
 ### FAQ
 
-请访问如下链接[FAQ](https://github.com/TophantTechnology/ARL/wiki/Docker-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85-ARL#faq)
+请访问如下链接[FAQ](https://tophanttechnology.github.io/ARL-doc/faq/)
 
 ### 写在最后
 
