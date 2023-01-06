@@ -1,7 +1,7 @@
 #coding: utf-8
 
 from flask import  make_response
-from flask_restplus import Resource, Namespace
+from flask_restx import Resource, Namespace
 from openpyxl import Workbook
 from bson import ObjectId
 import re

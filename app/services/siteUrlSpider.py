@@ -123,6 +123,7 @@ class SiteURLSpider(object):
                        ]
 
         self.ignore_ext = [".pdf", ".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx", ".zip", ".rar"]
+        self.ignore_ext.extend([".png", ".jpg", ".gif", ".js", ".css", ".ico"])
 
     def get_urls(self, entry_url):
         return self._work(entry_url)
@@ -161,6 +162,10 @@ class SiteURLSpider(object):
                     _url = utils.normal_url(_url)
                     if _url is None:
                         continue
+
+                    if utils.url_ext(_url) in self.ignore_ext:
+                        continue
+
                     _type = tag["type"]
                     if utils.same_netloc(_url, entry_url):
                         url_info = URLInfo(entry_url, _url, _type)
@@ -208,10 +213,10 @@ class SiteURLSpiderThread(BaseThread):
 
     def run(self):
         t1 = time.time()
-        logger.info("start site url spider thread {}".format(len(self.targets)))
+        logger.info("start site url spider entry_urls_list:{}".format(len(self.targets)))
         self._run()
         elapse = time.time() - t1
-        logger.info("end site url spider thread {}".format(elapse))
+        logger.info("end site url spider ({:.2f}s)".format(elapse))
         return self.site_url_map
 
 

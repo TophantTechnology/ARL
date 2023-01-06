@@ -3,7 +3,7 @@ import time
 import werkzeug
 from urllib.parse import quote
 from flask import make_response
-from flask_restplus import Resource, Api, reqparse, fields, Namespace
+from flask_restx import Resource, Api, reqparse, fields, Namespace
 from bson import ObjectId
 from app.utils import get_logger, auth, parse_human_rule, transform_rule_map
 from app import utils

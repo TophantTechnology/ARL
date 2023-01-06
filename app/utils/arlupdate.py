@@ -1,4 +1,4 @@
-from datetime import datetime
+import sys
 import os
 from . import conn_db
 from app.config import Config
@@ -39,12 +39,15 @@ def create_index():
 
 # 对site 集合中少数字段创建索引
 def create_site_index():
-    fields = ["status", "title", "hostname"]
+    fields = ["status", "title", "hostname", "site", "http_server"]
     for field in fields:
         conn_db("site").create_index(field)
 
 
 def arl_update():
+    if is_run_flask_routes():
+        return
+
     update_lock = os.path.join(Config.TMP_PATH, 'arl_update.lock')
     if os.path.exists(update_lock):
         return
@@ -54,3 +57,13 @@ def arl_update():
     create_site_index()
 
     open(update_lock, 'a').close()
+
+
+# 判断是否是-m flask routes 模式运行
+def is_run_flask_routes():
+    if len(sys.argv) == 2:
+        if "flask/__main__.py" in sys.argv[0]:
+            if sys.argv[1] == "routes":
+                return True
+
+    return False

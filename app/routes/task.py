@@ -1,6 +1,6 @@
 import re
 import bson
-from flask_restplus import Resource, Api, reqparse, fields, Namespace
+from flask_restx import Resource, Api, reqparse, fields, Namespace
 from bson import ObjectId
 from app import celerytask
 from app.utils import get_logger, auth

@@ -1,9 +1,8 @@
 from flask import Flask
-from flask_restplus import Api
+from flask_restx import Api
 
 from app import routes
 from app.utils import arl_update
-
 
 arl_app = Flask(__name__)
 arl_app.config['BUNDLE_ERRORS'] = True
@@ -17,8 +16,7 @@ authorizations = {
 }
 
 api = Api(arl_app, prefix="/api", doc="/api/doc", title='ARL backend API', authorizations=authorizations,
-    description='ARL（Asset Reconnaissance Lighthouse）资产侦察灯塔系统', security="ApiKeyAuth", version="2.5.2")
-
+          description='ARL（Asset Reconnaissance Lighthouse）资产侦察灯塔系统', security="ApiKeyAuth", version="2.5.3")
 
 api.add_namespace(routes.task_ns)
 api.add_namespace(routes.site_ns)
@@ -52,6 +50,7 @@ api.add_namespace(routes.github_scheduler_ns)
 api.add_namespace(routes.github_monitor_result_ns)
 api.add_namespace(routes.task_schedule_ns)
 api.add_namespace(routes.nuclei_result_ns)
+
 
 arl_update()
 

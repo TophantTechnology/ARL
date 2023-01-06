@@ -11,6 +11,7 @@ class TestUtilsNpoc(unittest.TestCase):
     def test_load_poc(self):
         n = npoc.NPoC(tmp_dir=Config.TMP_PATH)
         plugins = n.load_all_poc()
+        print("plugins", len(plugins))
         self.assertTrue(len(plugins) >= 10)
 
     def test_sync_2_db(self):

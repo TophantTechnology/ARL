@@ -10,7 +10,7 @@ class Query(DNSQueryBase):
     def __init__(self):
         super(Query, self).__init__()
         self.source_name = "quake_360"
-        self.api_url = "https://quake.360.cn/api/v3/search/quake_service"
+        self.api_url = "https://quake.360.net/api/v3/search/quake_service"
         self.quake_token = None
         self.max_size = 500
 
@@ -19,7 +19,7 @@ class Query(DNSQueryBase):
         self.max_size = max_size
 
     def sub_domains(self, target):
-        # 文档 https://quake.360.cn/quake/#/help?id=5e77423bcb9954d2f8a01656&title=%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
+        # 文档 https://quake.360.net/quake/#/help?id=5e77423bcb9954d2f8a01656&title=%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
         json_data = {"query": "domain:{}".format(target), "start": 0, "size": self.max_size}
         headers = {
             "X-QuakeToken": self.quake_token

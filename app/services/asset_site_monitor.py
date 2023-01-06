@@ -59,6 +59,10 @@ class AssetSiteCompare(BaseThread):
     def run(self):
         self._run()
         self.compare()
+
+        # 已经用完了省一点空间。
+        self.new_site_info_map.clear()
+
         return self.site_change_map
 
 
@@ -116,6 +120,7 @@ class AssetSiteMonitor(object):
 
     def build_change_list(self):
         compare = AssetSiteCompare(scope_id=self.scope_id)
+        # 根据资产组中的站点去重新请求，并比对状态码和标题。
         site_change_map = compare.run()
         sites = list(site_change_map.keys())
 
@@ -143,21 +148,19 @@ class AssetSiteMonitor(object):
                 self.site_change_info_list.append(site_info)
                 continue
 
+    # 对新发现的资产分组站点进行删除操作并添加一条新的数据
     def update_asset_site(self, asset_id, site_info):
         query = {
             "_id": asset_id
         }
         copy_site_info = site_info.copy()
-        if "favicon" in copy_site_info:
-            favicon = copy_site_info.pop("favicon")
-            if "data" in favicon:
-                copy_site_info["favicon.data"] = favicon["data"]
-                copy_site_info["favicon.url"] = favicon["url"]
-                copy_site_info["favicon.hash"] = favicon["hash"]
+        copy_site_info["scope_id"] = self.scope_id
+        curr_date = utils.curr_date_obj()
+        copy_site_info["save_date"] = curr_date
+        copy_site_info["update_date"] = curr_date
 
-        copy_site_info["update_date"] = utils.curr_date_obj()
-
-        utils.conn_db('asset_site').update(query, {"$set": copy_site_info})
+        utils.conn_db("asset_site").delete_one(query)
+        utils.conn_db("asset_site").insert_one(copy_site_info)
 
     def build_status_html_report(self):
         html = ""
@@ -314,6 +317,8 @@ class Domain2SiteMonitor(object):
         if len(domains) == 0:
             return ret
 
+        logger.info("load {} domain, scope_id:{}".format(len(domains), self.scope_id))
+
         have_domain_site_list = []
         for site in sites:
             netloc = utils.get_hostname(site)
@@ -323,6 +328,8 @@ class Domain2SiteMonitor(object):
         no_domain_site_list = set(domains) - set(have_domain_site_list)
         for domain in no_domain_site_list:
             ret.append("https://{}".format(domain))
+
+        logger.info("load {} no_domain_site_list, scope_id:{}".format(len(ret), self.scope_id))
 
         return ret
 
@@ -338,6 +345,11 @@ class Domain2SiteMonitor(object):
         for site_info in site_info_list:
             if site_info["status"] in [502, 504]:
                 continue
+
+            # 过滤400 状态码
+            if site_info["status"] == 400 and "400" in site_info["title"]:
+                continue
+
             self.site_info_list.append(site_info)
 
         self.build_report()

@@ -10,14 +10,11 @@ logger = utils.get_logger()
 
 celery = Celery('task', broker=Config.CELERY_BROKER_URL)
 
-
-class CeleryConfig:
-    CELERY_ACKS_LATE = False
-    CELERYD_PREFETCH_MULTIPLIER = 1
-    BROKER_TRANSPORT_OPTIONS = {"max_retries": 3, "interval_start": 0, "interval_step": 0.2, "interval_max": 0.5}
-
-
-celery.config_from_object(CeleryConfig)
+celery.conf.update(
+    task_acks_late=False,
+    worker_prefetch_multiplier=1,
+    broker_transport_options={"max_retries": 3, "interval_start": 0, "interval_step": 0.2, "interval_max": 0.5},
+)
 platforms.C_FORCE_ROOT = True
 
 

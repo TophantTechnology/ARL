@@ -129,7 +129,9 @@ class AddAssetSiteTask(RiskCruising):
         self.asset_site_deduplication()
         self.pre_set_site()
         if self.user_target_site_set:
-            web_site_fetch = WebSiteFetch(self.task_id, list(self.user_target_site_set), self.options)
+            web_site_fetch = WebSiteFetch(task_id=self.task_id,
+                                          sites=list(self.user_target_site_set),
+                                          options=self.options)
             web_site_fetch.run()
 
         self.common_run()

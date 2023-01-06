@@ -1,5 +1,5 @@
 from bson import ObjectId
-from flask_restplus import fields, Namespace
+from flask_restx import fields, Namespace
 from app.utils import get_logger, auth
 from app import utils
 from . import base_query_fields, ARLResource, get_arl_parser

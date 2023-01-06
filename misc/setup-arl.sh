@@ -1,3 +1,4 @@
+set -e
 
 echo "cd /opt/"
 
@@ -18,8 +19,8 @@ yum install epel-release -y
 yum install python36 mongodb-org-server mongodb-org-shell rabbitmq-server python36-devel gcc-c++ git \
  nginx  fontconfig wqy-microhei-fonts -y
 
-if [ ! -f /usr/bin/python36 ]; then
-  echo "link python36"
+if [ ! -f /usr/bin/python3.6 ]; then
+  echo "link python3.6"
   ln -s /usr/bin/python36 /usr/bin/python3.6
 fi
 

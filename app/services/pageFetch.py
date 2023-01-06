@@ -29,6 +29,7 @@ class PageFetch(BaseThread):
         logger.info("end PageFetch elapse {}".format(elapse))
         return self.page_map
 
+
 def page_fetch(sites, concurrency = 6):
     s = PageFetch(sites, concurrency = concurrency)
     return s.run()

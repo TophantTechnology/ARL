@@ -166,7 +166,8 @@ class RiskCruising(CommonTask):
         self.set_relay_targets()
         self.pre_set_site()
 
-        web_site_fetch = WebSiteFetch(self.task_id, list(self.user_target_site_set), self.options)
+        web_site_fetch = WebSiteFetch(task_id=self.task_id,
+                                      sites=list(self.user_target_site_set), options=self.options)
         web_site_fetch.run()
         self.available_sites = web_site_fetch.available_sites
 
