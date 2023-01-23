@@ -11,10 +11,6 @@ class Query(DNSQueryBase):
         super(Query, self).__init__()
         self.source_name = "threatminer"
         self.api_url = "https://api.threatminer.org/"
-        self.api_key = None
-
-    def init_key(self, api_key=None):
-        self.api_key = api_key
 
     def sub_domains(self, target):
         url = "{}/v2/domain.php".format(self.api_url)
