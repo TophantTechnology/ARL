@@ -42,8 +42,7 @@ QUERY_PLUGIN:
     api_key:
     enable: false
   threatminer:
-    api_key:
-    enable: false
+    enable: true
   virustotal: # 网站 https://www.virustotal.com/gui/
     api_key:
     enable: false
