@@ -58,13 +58,13 @@ class NucleiScan(object):
         for line in lines:
             data = json.loads(line)
             item = {
-                "template_url": data["template-url"],
-                "template_id": data["template-id"],
-                "vuln_name": data["info"]["name"],
-                "vuln_severity": data["info"]["severity"],
-                "vuln_url": data["matched-at"],
-                "curl_command": data["curl-command"],
-                "target": data["host"]
+                "template_url": data.get("template-url", ""),
+                "template_id": data.get("template-id", ""),
+                "vuln_name": data.get("info", {}).get("name", ""),
+                "vuln_severity": data.get("info", {}).get("severity", ""),
+                "vuln_url": data.get("matched-at", ""),
+                "curl_command": data.get("curl-command", ""),
+                "target": data.get("host", "")
             }
             results.append(item)
 
