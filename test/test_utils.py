@@ -17,6 +17,13 @@ class TestCDNName(unittest.TestCase):
         rule_map = parse_human_rule(human_rule)
         self.assertTrue(rule_map is None)
 
+    def test_utils_get_fld(self):
+        fld = utils.get_fld("www.baidu.com")
+        self.assertTrue(fld == "baidu.com")
+
+        fld = utils.get_fld("baidu.com")
+        self.assertTrue(fld == "baidu.com")
+
     def test_transform_rule_map(self):
         human_rule = 'header="test.php" || body="test.gif" || title="test title" || body="test22.gif"'
         rule_map = parse_human_rule(human_rule)

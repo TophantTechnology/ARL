@@ -20,7 +20,7 @@ class DomainDictType:
 class CollectSource:
     DOMAIN_BRUTE = "domain_brute"
     BAIDU = "baidu"
-    ALTDNS = "altdns"
+    ALTDNS = "alt_dns"
     ARL = "arl"
     SITESPIDER = "site_spider"
     SEARCHENGINE = "search_engine"

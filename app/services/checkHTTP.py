@@ -62,7 +62,6 @@ class CheckHTTP(BaseThread):
         logger.info("start check http {}".format(len(self.targets)))
         self._run()
         elapse = time.time() - t1
-        logger.info("end start check http {} elapse {}".format(len(self.checkout_map), elapse))
         return self.checkout_map
 
 

@@ -1,4 +1,4 @@
-from .altDNS import altdns
+from .altDNS import alt_dns
 from .massdns import mass_dns
 from .portScan import port_scan
 from .resolverDomain import resolver_domain

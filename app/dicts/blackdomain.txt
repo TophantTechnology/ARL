@@ -32,3 +32,4 @@
 media.gamer.qq.com
 .ccs.tencent-cloud.com
 .peck.gamebonfire.com
+.mail.qq.com

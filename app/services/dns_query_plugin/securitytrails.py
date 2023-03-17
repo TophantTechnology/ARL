@@ -1,6 +1,3 @@
-import json
-import time
-
 from app.services.dns_query import DNSQueryBase
 from app import utils
 
@@ -33,6 +30,11 @@ class Query(DNSQueryBase):
                               headers=headers,
                               timeout=(20, 120))
         data = conn.json()
+        message = data.get("message")
+        if message:
+            self.logger.error(f"{self.source_name} error: {message}")
+            return []
+
         subdomains = []
         for item in data['subdomains']:
             domain = "{}.{}".format(item, target)
