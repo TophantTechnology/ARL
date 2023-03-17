@@ -45,7 +45,7 @@ docker-compose up -d
 或者直接下载`docker-compose`配置文件启动
 ```
 mkdir docker_arl
-wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.5.3/docker.zip
+wget -O docker_arl/docker.zip https://github.com/TophantTechnology/ARL/releases/download/v2.5.4/docker.zip
 cd docker_arl
 unzip -o docker.zip
 docker-compose pull
