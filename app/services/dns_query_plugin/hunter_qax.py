@@ -39,9 +39,12 @@ class Query(DNSQueryBase):
             param["page"] = curr_page
             data = utils.http_req(self.api_url, 'get', params=param).json()
 
-            if data["code"] != 200:
+            if data["code"] != 200 and data["code"] != 40205:
                 self.logger.error("hunter_qax query error:{}".format(json.dumps(data, ensure_ascii=False)))
                 break
+
+            if data["code"] == 40205:
+                self.logger.info(data["message"])
 
             arr = data["data"]["arr"]
             if arr is None:

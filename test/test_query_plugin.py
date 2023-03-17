@@ -12,7 +12,7 @@ class TestQueryPlugin(unittest.TestCase):
 
         # pycharm 下运行
         if "/pycharm/" in sys.argv[0]:
-            results = run_query_plugin("tophant.com", ["zoomeye"])
+            results = run_query_plugin("tophant.com", ["fofa"])
         else:
             print("sources :{}".format(" ".join(sys.argv[1:])))
             results = run_query_plugin("tophant.com", sys.argv[1:])

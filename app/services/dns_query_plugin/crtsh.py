@@ -11,7 +11,8 @@ class Query(DNSQueryBase):
     def sub_domains(self, target):
         param = {
             "output": "json",
-            "q": target
+            "q": target,
+            "exclude": "expired"   # 排除过期的证书
         }
 
         items = utils.http_req(self.api_url, 'get', params=param, timeout=(30.1, 50.1)).json()

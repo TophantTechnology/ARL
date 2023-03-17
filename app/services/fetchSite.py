@@ -72,9 +72,13 @@ class FetchSite(BaseThread):
         self.site_info_list.append(item)
         if conn.status_code == 301 or conn.status_code == 302:
             url_302 = urljoin(site, conn.headers.get("Location", ""))
+            # 防御性编程
+            if len(url_302) > 100:
+                return
+
             if url_302 != site and url_302.startswith(site):
                 site_path = urlparse(site).path.strip("/")
-                url_302_path = urlparse(url_302).path
+                url_302_path = urlparse(url_302).path.strip("/")
                 if len(site_path) > 5 and url_302_path.endswith(site_path):
                     return
                 self.work(url_302)

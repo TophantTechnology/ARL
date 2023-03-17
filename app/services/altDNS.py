@@ -6,20 +6,25 @@ import shlex
 from collections import Counter
 from app.config import Config
 from app import utils
+from .massdns import MassDNS
+
 logger = utils.get_logger()
 NUM_COUNT = 4
 
-class DnsGen():
-    def __init__(self, subdomains, words, base_domain = None):
+
+#  FROM: https://github.com/ProjectAnte/dnsgen/blob/master/dnsgen/dnsgen.py
+
+class DnsGen(object):
+    def __init__(self, subdomains, words, base_domain=None):
         self.subdomains = subdomains
         self.base_domain = base_domain
         self.words = words
 
     def partiate_domain(self, domain):
-        '''
+        """
         Split domain base on subdomain levels.
         TLD is taken as one part, regardless of its levels (.co.uk, .com, ...)
-        '''
+        """
 
         # test.1.foo.example.com -> [test, 1, foo, example.com]
         # test.2.foo.example.com.cn -> [test, 2, foo, example.com.cn]
@@ -36,9 +41,9 @@ class DnsGen():
         return [p for p in parts if p]
 
     def insert_word_every_index(self, parts):
-        '''
+        """
         Create new subdomain levels by inserting the words between existing levels
-        '''
+        """
 
         # test.1.foo.example.com -> WORD.test.1.foo.example.com, test.WORD.1.foo.example.com,
         #                           test.1.WORD.foo.example.com, test.1.foo.WORD.example.com, ...
@@ -47,6 +52,12 @@ class DnsGen():
 
         for w in self.words:
             for i in range(len(parts)):
+                if i + 1 == len(parts):
+                    break
+
+                if w in parts[:-1]:
+                    continue
+
                 tmp_parts = parts[:-1]
                 tmp_parts.insert(i, w)
                 domains.append('{}.{}'.format('.'.join(tmp_parts), parts[-1]))
@@ -54,9 +65,9 @@ class DnsGen():
         return domains
 
     def insert_num_every_index(self, parts):
-        '''
+        """
         Create new subdomain levels by inserting the numbers between existing levels
-        '''
+        """
 
         # foo.test.example.com ->   foo1.test.example.com, foo.test1.example.com,
         #                            ...
@@ -74,11 +85,10 @@ class DnsGen():
 
         return domains
 
-
     def prepend_word_every_index(self, parts):
-        '''
+        """
         On every subdomain level, prepend existing content with `WORD` and `WORD-`
-        '''
+        """
 
         # test.1.foo.example.com -> WORDtest.1.foo.example.com, test.WORD1.foo.example.com,
         #                           test.1.WORDfoo.example.com, WORD-test.1.foo.example.com,
@@ -89,6 +99,9 @@ class DnsGen():
         for w in self.words:
             for i in range(len(parts[:-1])):
                 # prepend normal
+                if w in parts[:-1]:
+                    continue
+
                 tmp_parts = parts[:-1]
                 tmp_parts[i] = '{}{}'.format(w, tmp_parts[i])
                 domains.append('{}.{}'.format('.'.join(tmp_parts), parts[-1]))
@@ -100,11 +113,10 @@ class DnsGen():
 
         return domains
 
-
     def append_word_every_index(self, parts):
-        '''
+        """
         On every subdomain level, append existing content with `WORD` and `WORD-`
-        '''
+        """
 
         # test.1.foo.example.com -> testWORD.1.foo.example.com, test.1WORD.foo.example.com,
         #                           test.1.fooWORD.example.com, test-WORD.1.foo.example.com,
@@ -115,6 +127,9 @@ class DnsGen():
         for w in self.words:
             for i in range(len(parts[:-1])):
                 # append normal
+                if w in parts[:-1]:
+                    continue
+
                 tmp_parts = parts[:-1]
                 tmp_parts[i] = '{}{}'.format(tmp_parts[i], w)
                 domains.append('{}.{}'.format('.'.join(tmp_parts), '.'.join(parts[-1:])))
@@ -127,9 +142,9 @@ class DnsGen():
         return domains
 
     def replace_word_with_word(self, parts):
-        '''
+        """
         If word longer than 3 is found in existing subdomain, replace it with other words from the dictionary
-        '''
+        """
 
         # WORD1.1.foo.example.com -> WORD2.1.foo.example.com, WORD3.1.foo.example.com,
         #                            WORD4.1.foo.example.com, ...
@@ -145,6 +160,8 @@ class DnsGen():
                     if w == w_alt:
                         continue
 
+                    if w in parts[:-1]:
+                        continue
                     domains.append('{}.{}'.format('.'.join(parts[:-1]).replace(w, w_alt), '.'.join(parts[-1:])))
 
         return domains
@@ -163,97 +180,49 @@ class DnsGen():
                 yield perm
 
 
-class AltDNS:
-    def __init__(self, subdomains, base_domain = None, words = None, massdns_bin = None,
-                 dnsserver = None, tmp_dir = None):
+class AltDNS(object):
+    def __init__(self, subdomains, base_domain, words, wildcard_domain_ip=None):
         self.subdomains = subdomains
+
         self.base_domain = base_domain
+
         self.words = words
-        self.tmp_dir = tmp_dir
-        self.dnsserver = dnsserver
-        self.dnsgen_output_path = os.path.join(tmp_dir,
-                                               "dnsgen_{}".format(utils.random_choices()))
 
-        self.massdns_output_path = os.path.join(tmp_dir,
-                                               "massdns_{}".format(utils.random_choices()))
-        self.massdns_bin = massdns_bin
+        if wildcard_domain_ip is None:
+            wildcard_domain_ip = []
 
-    def dnsgen(self):
-        genresult = DnsGen(set(self.subdomains), self.words,
-                           base_domain=self.base_domain).run()
-
-        with open(self.dnsgen_output_path, "w") as f:
-            for domain in genresult:
-                f.write(domain + "\n")
-
-        return self.dnsgen_output_path
-
-    def massdns(self):
-        command = [self.massdns_bin, "-q",
-                   "-r {}".format(self.dnsserver),
-                   "-o S",
-                   "-w {}".format(self.massdns_output_path),
-                   "-s {}".format(Config.ALT_DNS_CONCURRENT),
-                   self.dnsgen_output_path,
-                   "--root"
-                   ]
-
-        logger.info(" ".join(command))
-        utils.exec_system(command)
-
-        return self.massdns_output_path
-
-    def parse_massdns_output(self):
-        output = []
-        lines = utils.load_file(self.massdns_output_path)
-        for line in lines:
-            data = line.split(" ")
-            if len(data) != 3:
-                continue
-            domain, type, record = data
-            item = {
-                "domain": domain.strip("."),
-                "type": type,
-                "record": record.strip()
-            }
-            output.append(item)
-
-        return output
+        self.wildcard_domain_ip = wildcard_domain_ip
 
     def run(self):
-        output = []
-        try:
-            self.dnsgen()
-            self.massdns()
-            output =  self.parse_massdns_output()
-            self._delete_file()
-        except Exception as e:
-            logger.exception(e)
+        # 生成域名
+        domains = DnsGen(set(self.subdomains), self.words,
+                         base_domain=self.base_domain).run()
 
-        return output
+        logger.info("start AltDNS:{} wildcard_record:{}".format(
+            self.base_domain, ",".join(self.wildcard_domain_ip)))
 
-    def _delete_file(self):
-        try:
-            os.unlink(self.dnsgen_output_path)
-            os.unlink(self.massdns_output_path)
-        except Exception as e:
-            logger.warning(e)
+        mass = MassDNS(domains, mass_dns_bin=Config.MASSDNS_BIN,
+                       dns_server=Config.DNS_SERVER, tmp_dir=Config.TMP_PATH,
+                       wildcard_domain_ip=self.wildcard_domain_ip, concurrent=Config.ALT_DNS_CONCURRENT)
+
+        return mass.run()
 
 
-'''
+"""
 [{
 	'domain': 'account.tophant.com',
 	'type': 'A',
 	'record': '182.254.150.199'
 }]
-'''
-def altdns(subdomains, base_domain = None, words = None):
+"""
+
+
+def alt_dns(subdomains, base_domain=None, words=None, wildcard_domain_ip=None):
     if len(subdomains) == 0:
         return []
 
     a = AltDNS(subdomains, base_domain,
-               words = words, massdns_bin= Config.MASSDNS_BIN,
-               dnsserver=Config.DNS_SERVER, tmp_dir=Config.TMP_PATH)
+               words=words, wildcard_domain_ip=wildcard_domain_ip)
     raw_domains_info = a.run()
 
     '''解决泛解析的问题'''
@@ -266,7 +235,3 @@ def altdns(subdomains, base_domain = None, words = None):
         domains_info.append(info)
 
     return domains_info
-
-
-
-

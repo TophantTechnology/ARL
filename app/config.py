@@ -27,7 +27,7 @@ class Config(object):
     CDN_JSON_PATH = os.path.join(basedir, 'dicts/cdn_info.json')
 
     black_domain_path = os.path.join(basedir, 'dicts/blackdomain.txt')
-    black_heixie_path = os.path.join(basedir, 'dicts/blackheixie.txt')
+    black_heixie_path = os.path.join(basedir, 'dicts/blackhexie.txt')
     black_asset_site = os.path.join(basedir, 'dicts/black_asset_site.txt')
     altdns_dict_path = os.path.join(basedir, 'dicts/altdnsdict.txt')
 

@@ -17,7 +17,8 @@ class BuildDomainInfo(BaseThread):
         if hasattr(target, "domain"):
             domain = target.domain
 
-        ips = utils.get_ip(domain)
+        # 不记录日志
+        ips = utils.get_ip(domain, log_flag=False)
         if not ips:
             return
 

@@ -24,7 +24,9 @@ from app.services.searchEngines import search_engines
 
 
 class DomainBrute(object):
-    def __init__(self, base_domain, word_file=Config.DOMAIN_DICT_2W):
+    def __init__(self, base_domain, word_file=Config.DOMAIN_DICT_2W, wildcard_domain_ip=None):
+        if wildcard_domain_ip is None:
+            wildcard_domain_ip = []
         self.base_domain = base_domain
         self.base_domain_scope = "." + base_domain.strip(".")
         self.dicts = utils.load_file(word_file)
@@ -34,9 +36,10 @@ class DomainBrute(object):
         self.domain_info_list = []
         self.domain_cnames = []
         self.brute_domain_map = {}  # 保存了通过massdns获取的结果
+        self.wildcard_domain_ip = wildcard_domain_ip  # 保存获取的泛解析IP
 
     def _brute_domain(self):
-        self.brute_out = services.mass_dns(self.base_domain, self.dicts)
+        self.brute_out = services.mass_dns(self.base_domain, self.dicts, self.wildcard_domain_ip)
 
     def _resolver(self):
         domains = []
@@ -77,10 +80,10 @@ class DomainBrute(object):
                 domains.append(domain)
 
         start_time = time.time()
-        logger.info("start reslover {} {}".format(self.base_domain, len(domains)))
+        logger.info("start resolver {} {}".format(self.base_domain, len(domains)))
         self.resolver_map = services.resolver_domain(domains)
         elapse = time.time() - start_time
-        logger.info("end reslover {} result {}, elapse {}".format(self.base_domain,
+        logger.info("end resolver {} result {}, elapse {}".format(self.base_domain,
                                                                   len(self.resolver_map), elapse))
 
     '''
@@ -286,7 +289,6 @@ class FindSite(object):
     def run(self):
         url_temp_list = set(self._build())
         start_time = time.time()
-        logger.info("start check_http {}".format(len(url_temp_list)))
         check_map = services.check_http(url_temp_list)
 
         # 去除https和http相同的
@@ -311,14 +313,15 @@ class FindSite(object):
 '''
 
 
-class AltDNS():
-    def __init__(self, domain_info_list, base_domain):
+class AltDNS(object):
+    def __init__(self, domain_info_list, base_domain, wildcard_domain_ip=None):
         self.domain_info_list = domain_info_list
         self.base_domain = base_domain
         self.domains = []
         self.subdomains = []
         inner_dicts = "test adm admin api app beta demo dev front int internal intra ops pre pro prod qa sit staff stage test uat"
         self.dicts = inner_dicts.split()
+        self.wildcard_domain_ip = wildcard_domain_ip
 
     def _fetch_domains(self):
         base_len = len(self.base_domain)
@@ -347,14 +350,14 @@ class AltDNS():
         self.dicts = list(set(self.dicts))
 
     def _load_dict(self):
-        ##加载内部字典
-        dict = set()
+        """加载内部字典"""
+        d = set()
         for x in utils.load_file(Config.altdns_dict_path):
             x = x.strip()
             if x:
-                dict.add(x)
+                d.add(x)
 
-        return list(dict)
+        return list(d)
 
     def run(self):
         t1 = time.time()
@@ -362,7 +365,9 @@ class AltDNS():
 
         logger.info("start {} AltDNS {}  dict {}".format(self.base_domain,
                                                          len(self.domains), len(self.dicts)))
-        out = services.altdns(self.domains, self.base_domain, self.dicts)
+
+        out = services.alt_dns(self.domains, self.base_domain,
+                               self.dicts, wildcard_domain_ip=self.wildcard_domain_ip)
 
         elapse = time.time() - t1
         logger.info("end AltDNS result {}, elapse {}".format(len(out), elapse))
@@ -370,8 +375,11 @@ class AltDNS():
         return out
 
 
-def domain_brute(base_domain, word_file=Config.DOMAIN_DICT_2W):
-    b = DomainBrute(base_domain, word_file)
+def domain_brute(base_domain, word_file=Config.DOMAIN_DICT_2W, wildcard_domain_ip=None):
+    if wildcard_domain_ip is None:
+        wildcard_domain_ip = []
+
+    b = DomainBrute(base_domain, word_file, wildcard_domain_ip)
     return b.run()
 
 
@@ -385,8 +393,8 @@ def find_site(ip_info_list):
     return f.run()
 
 
-def alt_dns(doamin_info_list, base_doamin):
-    a = AltDNS(doamin_info_list, base_doamin)
+def alt_dns(domain_info_list, base_domain, wildcard_domain_ip=None):
+    a = AltDNS(domain_info_list, base_domain, wildcard_domain_ip=wildcard_domain_ip)
     return a.run()
 
 
@@ -501,6 +509,9 @@ class DomainTask(CommonTask):
             self._not_found_domain_ips = utils.get_ip(fake_domain, log_flag=False)
 
             if self._not_found_domain_ips:
+                self._not_found_domain_ips.extend(utils.get_cname(fake_domain, log_flag=False))
+
+            if self._not_found_domain_ips:
                 logger.info("not_found_domain_ips  {} {}".format(fake_domain, self._not_found_domain_ips))
 
         return self._not_found_domain_ips
@@ -516,13 +527,10 @@ class DomainTask(CommonTask):
             utils.conn_db('domain').insert_one(domain_info)
 
     def domain_brute(self):
-        max_domain_dict_size = 30 * 10000
-        if self.domain_dict_size >= max_domain_dict_size and len(self.not_found_domain_ips) > 0:
-            logger.warning("{} 域名泛解析, 字典大小为{}, 大于{}, 不进行域名爆破".format(
-                self.base_domain, self.domain_dict_size, max_domain_dict_size))
-            return
+        # 调用工具去进行域名爆破，如果存在泛解析，会把包含泛解析的IP的域名给删除
+        domain_info_list = domain_brute(self.base_domain, word_file=self.domain_word_file,
+                                        wildcard_domain_ip=self.not_found_domain_ips)
 
-        domain_info_list = domain_brute(self.base_domain, word_file=self.domain_word_file)
         domain_info_list = self.clear_domain_info_by_record(domain_info_list)
         if self.task_tag == "task":
             self.save_domain_info_list(domain_info_list, source=CollectSource.DOMAIN_BRUTE)
@@ -601,6 +609,24 @@ class DomainTask(CommonTask):
 
         return domain_info_list
 
+    def alt_dns_current(self):
+        primary_domain = utils.get_fld(self.base_domain)
+        # 当前下发的是主域名，就跳过
+        if primary_domain == self.base_domain or primary_domain == "":
+            return []
+        fake = {
+            "domain": self.base_domain,
+            "type": "CNAME",
+            "record": [],
+            "ips": []
+        }
+        fake_info = modules.DomainInfo(**fake)
+
+        logger.info("alt_dns_current {}, primary_domain:{}".format(self.base_domain, primary_domain))
+        data = alt_dns([fake_info], primary_domain, wildcard_domain_ip=self.not_found_domain_ips)
+
+        return data
+
     def alt_dns(self):
         if self.task_tag == "monitor" and len(self.domain_info_list) >= 800:
             logger.info("skip alt_dns on monitor {}".format(self.base_domain))
@@ -611,12 +637,24 @@ class DomainTask(CommonTask):
                 self.base_domain, len(self.domain_info_list)))
             return
 
-        alt_dns_out = alt_dns(self.domain_info_list, self.base_domain)
+        alt_dns_current_out = self.alt_dns_current()
+
+        alt_dns_out = alt_dns(self.domain_info_list, self.base_domain, wildcard_domain_ip=self.not_found_domain_ips)
+
+        alt_dns_out.extend(alt_dns_current_out)
+        # 没有结果，直接返回
+        if len(alt_dns_out) <= 0:
+            return
+
         alt_domain_info_list = self.build_domain_info(alt_dns_out)
         if self.task_tag == "task":
             alt_domain_info_list = self.clear_domain_info_by_record(alt_domain_info_list)
-            self.save_domain_info_list(alt_domain_info_list,
-                                       source=CollectSource.ALTDNS)
+
+            logger.info("alt_dns real result:{}".format(len(alt_domain_info_list)))
+
+            if len(alt_domain_info_list) > 0:
+                self.save_domain_info_list(alt_domain_info_list,
+                                           source=CollectSource.ALTDNS)
 
         self.domain_info_list.extend(alt_domain_info_list)
 
@@ -765,19 +803,22 @@ class DomainTask(CommonTask):
             source_domains.append(domain)
             sources_map[source] = source_domains
 
+        cnt = 0  # 统计真实数据
         for source in sources_map:
             source_domains = sources_map[source]
             if not source_domains:
                 continue
-
+            logger.info("start build domain info, source:{}".format(source))
             domain_info_list = self.build_domain_info(source_domains)
             if self.task_tag == "task":
                 domain_info_list = self.clear_domain_info_by_record(domain_info_list)
                 self.save_domain_info_list(domain_info_list, source=source)
 
+            cnt += len(domain_info_list)
             self.domain_info_list.extend(domain_info_list)
 
-        logger.info("end run dns_query_plugin {}, result {}".format(self.base_domain, len(results)))
+        logger.info("end run dns_query_plugin {}, result {}, real result:{}".format(
+            self.base_domain, len(results), cnt))
 
     def domain_fetch(self):
         '''****域名爆破开始****'''
@@ -1010,7 +1051,6 @@ class DomainTask(CommonTask):
 
         # 搜索引擎调用
         self.search_engines()
-
 
         self.start_ip_fetch()
 
