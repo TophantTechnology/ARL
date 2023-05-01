@@ -1,17 +1,30 @@
-
 CELERY:
-  BROKER_URL : "amqp://arl:arlpassword@localhost:5672/arlv2host"
+  BROKER_URL : "amqp://arl:arlpassword@rabbitmq:5672/arlv2host"
 
 
 MONGO:
-  URI : 'mongodb://127.0.0.1:27017/'
+  URI : 'mongodb://admin:admin@mongodb:27017/'
   DB : 'arl'
+
+
+
+#GeoIP 数据库文件配置项
+GEOIP:
+  CITY: '/data/GeoLite2/GeoLite2-City.mmdb'
+  ASN: '/data/GeoLite2/GeoLite2-ASN.mmdb'
+
+
+#Fofa API 配置项
+FOFA:
+  URL: "https://fofa.info"
+  EMAIL: ""
+  KEY: ""
 
 
 
 # 利用三方API进行域名收集
 # 测试命令 python3.6 -m test.test_query_plugin [source1] [source2]
-# 域名查询插件配置
+# 域名查询插件配置, enable 字段可以单独控制是否启用该插件，如果没有这个字段也会默认启用
 QUERY_PLUGIN:
   alienvault:
     enable: true
@@ -21,7 +34,7 @@ QUERY_PLUGIN:
     enable: true
   crtsh:
     enable: true
-  fofa:  # fofa 的key配置在下面
+  fofa:  # fofa 的key配置在上面
     enable: true
   hunter_qax: # 网站 https://hunter.qianxin.com/
     api_key:
@@ -55,18 +68,6 @@ QUERY_PLUGIN:
     enable: false
 
 
-#GeoIP 数据库文件配置项
-GEOIP:
-  CITY: '/data/GeoLite2/GeoLite2-City.mmdb'
-  ASN: '/data/GeoLite2/GeoLite2-ASN.mmdb'
-
-
-#Fofa API 配置项
-FOFA:
-  URL: "https://fofa.info"
-  EMAIL: ""
-  KEY: ""
-
 #钉钉消息推送配置
 #钉钉添加机器人，请查看
 #https://github.com/TophantTechnology/ARL/wiki/ARL%202.3%20%E6%96%B0%E6%B7%BB%E5%8A%A0%E5%8A%9F%E8%83%BD%E8%AF%B4%E6%98%8E
@@ -74,7 +75,7 @@ DINGDING:
   SECRET: ""
   ACCESS_TOKEN: ""
 
-#邮件发送配置
+#邮件推送配置
 EMAIL:
   HOST: ""
   PORT: ""
@@ -85,6 +86,8 @@ EMAIL:
 # 监控任务 WEBHOOK 配置
 # IP/域名监控和站点监控结束后会往下面的URL POST提交JSON数据
 # 为了验证身份会在Header中带上Token 字段
+# 进入容器测试  docker-compose exec worker bash
+# 测试命令 python3.6 -m test.test_webhook <task_id> <scope_id>
 WEBHOOK:
   URL: ""
   TOKEN: ""
@@ -116,15 +119,12 @@ ARL:
     - gov.cn
   #端口对应前端测试选项
   PORT_TOP_10: "80,443,8443,8080,8081,8888,8089,5000,5001,8085,800,81,9000,88,8001,8090"
-  #域名爆破字典前端大字典选项，空即系统默认
-  DOMAIN_DICT: ""
-  #文件泄漏字典， 空即系统默认
-  FILE_LEAK_DICT: ""
+  #域名爆破字典前端大字典选项
+  DOMAIN_DICT: "/code/app/dicts/domain_2w.txt"
+  #文件泄漏字典
+  FILE_LEAK_DICT: "/code/app/dicts/file_top_2000.txt"
 
   #域名爆破并发数
   DOMAIN_BRUTE_CONCURRENT: 300
   #组合生成的域名爆破并发数
   ALT_DNS_CONCURRENT: 1500
-
-
-
