@@ -50,6 +50,9 @@ QUERY_PLUGIN:
     api_key:
     max_page: 20
     enable: false
+  chaos: # https://chaos.projectdiscovery.io/#/
+    api_key:
+    enable: false
 
 
 #GeoIP 数据库文件配置项

@@ -61,6 +61,12 @@ RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.9.0/nuc
 RUN unzip nuclei_2.9.0_linux_amd64.zip && mv nuclei /usr/bin/ && rm -f nuclei_2.9.0_linux_amd64.zip
 RUN nuclei
 
+## 安装chaos
+RUN wget https://github.com/projectdiscovery/chaos-client/releases/download/v0.5.1/chaos-client_0.5.1_linux_amd64.zip
+RUN unzip chaos-client_0.5.1_linux_amd64.zip && mv chaos-client /usr/bin/ && rm -f chaos-client_0.5.1_linux_amd64.zip
+RUN chaos-client
+
+
 ## 切换工作目录
 WORKDIR /code
 
