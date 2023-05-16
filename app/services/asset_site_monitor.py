@@ -343,7 +343,7 @@ class Domain2SiteMonitor(object):
 
         # 过滤 502, 504
         for site_info in site_info_list:
-            if site_info["status"] in [502, 504]:
+            if site_info["status"] in [502, 504, 501, 422, 410]:
                 continue
 
             # 过滤400 状态码

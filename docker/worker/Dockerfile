@@ -57,8 +57,8 @@ RUN pip3.6 install -r requirements.txt
 
 
 ## 安装nuclei
-RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.9.0/nuclei_2.9.0_linux_amd64.zip
-RUN unzip nuclei_2.9.0_linux_amd64.zip && mv nuclei /usr/bin/ && rm -f nuclei_2.9.0_linux_amd64.zip
+RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.9.4/nuclei_2.9.4_linux_amd64.zip
+RUN unzip nuclei_2.9.4_linux_amd64.zip && mv nuclei /usr/bin/ && rm -f nuclei_2.9.4_linux_amd64.zip
 RUN nuclei
 
 ## 切换工作目录

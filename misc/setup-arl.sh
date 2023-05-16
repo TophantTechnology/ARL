@@ -17,7 +17,7 @@ EOF
 echo "install dependencies ..."
 yum install epel-release -y
 yum install python36 mongodb-org-server mongodb-org-shell rabbitmq-server python36-devel gcc-c++ git \
- nginx  fontconfig wqy-microhei-fonts -y
+ nginx  fontconfig wqy-microhei-fonts unzip wget -y
 
 if [ ! -f /usr/bin/python3.6 ]; then
   echo "link python3.6"
@@ -30,7 +30,21 @@ if [ ! -f /usr/local/bin/pip3.6 ]; then
   pip3.6 install --upgrade pip
 fi
 
-rpm -vhU https://nmap.org/dist/nmap-7.91-1.x86_64.rpm
+if ! command -v nmap &> /dev/null
+then
+    echo "install nmap-7.91-1 ..."
+    rpm -vhU https://nmap.org/dist/nmap-7.91-1.x86_64.rpm
+fi
+
+
+if ! command -v nuclei &> /dev/null
+then
+  echo "install nuclei_2.9.4 ..."
+  wget https://github.com/projectdiscovery/nuclei/releases/download/v2.9.4/nuclei_2.9.4_linux_amd64.zip
+  unzip nuclei_2.9.4_linux_amd64.zip && mv nuclei /usr/bin/ && rm -f nuclei_2.9.4_linux_amd64.zip
+  nuclei
+fi
+
 
 echo "start services ..."
 systemctl enable mongod

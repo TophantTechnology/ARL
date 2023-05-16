@@ -16,7 +16,7 @@ QUERY_PLUGIN:
   alienvault:
     enable: true
   certspotter: # https://www.certspotter.com/
-    after_id: 0
+    after_id: 1
     max_page: 3
     enable: true
   crtsh:
@@ -41,8 +41,6 @@ QUERY_PLUGIN:
   securitytrails: # 网站 https://securitytrails.com/
     api_key:
     enable: false
-  threatminer:
-    enable: true
   virustotal: # 网站 https://www.virustotal.com/gui/
     api_key:
     enable: false

@@ -1,8 +1,5 @@
-import os
-import re
 import time
-from app import  utils
-from app.config import Config
+from app import utils
 from .baseThread import BaseThread
 logger = utils.get_logger()
 
@@ -13,7 +10,6 @@ class ProbeHTTP(BaseThread):
 
         self.sites = []
         self.domains = domains
-
 
     def _build_targets(self, domains):
         _targets = []
@@ -28,7 +24,12 @@ class ProbeHTTP(BaseThread):
         return _targets
 
     def work(self, target):
-        utils.http_req(target, 'head', timeout=(3, 2))
+        conn = utils.http_req(target, 'head', timeout=(3, 2))
+
+        if conn.status_code in [502, 504, 501, 422, 410]:
+            logger.debug(f"{target} 状态码为 {conn.status_code} 跳过")
+            return
+
         self.sites.append(target)
 
     def run(self):
@@ -51,6 +52,7 @@ class ProbeHTTP(BaseThread):
 
         return alive_site
 
-def probe_http(domain, concurrency = 10):
-    p = ProbeHTTP(domain, concurrency = concurrency)
-    return  p.run()
+
+def probe_http(domain, concurrency=10):
+    p = ProbeHTTP(domain, concurrency=concurrency)
+    return p.run()

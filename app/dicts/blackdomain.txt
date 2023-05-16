@@ -33,3 +33,6 @@ media.gamer.qq.com
 .ccs.tencent-cloud.com
 .peck.gamebonfire.com
 .mail.qq.com
+.meeting.tencent.com
+.txmeeting.tencent.com
+.powerfl.qq.com

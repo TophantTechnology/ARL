@@ -24,10 +24,26 @@ class NucleiScan(object):
 
         self.nuclei_bin_path = "nuclei"
 
+        # 在nuclei 2.9.1 中 将-json 参数改成了 -jsonl 参数。
+        self.nuclei_json_flag = None
+
+    def _check_json_flag(self):
+        json_flag = ["-json", "-jsonl"]
+        for x in json_flag:
+            command = [self.nuclei_bin_path, x]
+            pro = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if pro.returncode == 0:
+                self.nuclei_json_flag = x
+                return
+
+        assert self.nuclei_json_flag
+
     def _delete_file(self):
         try:
             os.unlink(self.nuclei_target_path)
-            os.unlink(self.nuclei_result_path)
+            # 删除结果临时文件
+            if os.path.exists(self.nuclei_result_path):
+                os.unlink(self.nuclei_result_path)
         except Exception as e:
             logger.warning(e)
 
@@ -78,7 +94,7 @@ class NucleiScan(object):
                    "-severity low,medium,high,critical",
                    "-type http",
                    "-l {}".format(self.nuclei_target_path),
-                   "-json",
+                   self.nuclei_json_flag,  # 在nuclei 2.9.1 中 将 -json 参数改成了 -jsonl 参数
                    "-stats",
                    "-stats-interval 60",
                    "-o {}".format(self.nuclei_result_path),
@@ -90,9 +106,12 @@ class NucleiScan(object):
     def run(self):
         if not self.check_have_nuclei():
             logger.warning("not found nuclei")
-            return
+            return []
+
+        self._check_json_flag()
 
         self.exec_nuclei()
+
         results = self.dump_result()
 
         # 删除临时文件

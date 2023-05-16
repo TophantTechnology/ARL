@@ -53,6 +53,8 @@ class BaseThread(object):
 
             self.semaphore.acquire()
             t1 = threading.Thread(target=self._work, args=(target,))
+            # 可以快速结束程序
+            t1.setDaemon(True)
             t1.start()
 
             deque.append(t1)
