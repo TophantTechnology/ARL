@@ -19,7 +19,9 @@ base_search_fields = {
     'os_info.name': fields.String(description="操作系统名称"),
     "task_id": fields.String(description="任务ID"),
     "ip_type": fields.String(description="IP类型，公网(PUBLIC)和内网(PRIVATE)"),
-    "cdn_name": fields.String(description="CDN 厂商名称")
+    "cdn_name": fields.String(description="CDN 厂商名称"),
+    "geo_asn.number": fields.Integer(description="AS number"),
+    "geo_asn.organization": fields.String(description="AS organization")
 }
 
 base_search_fields.update(base_query_fields)

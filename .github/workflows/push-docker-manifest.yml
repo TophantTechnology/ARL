@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: build amd64 image
+name: Push Docker Manifest
 
 # Controls when the action will run.
 on:
@@ -26,37 +26,34 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@master
 
-      - name: Download GeoLite2
-        run: |
-          pwd
-          mkdir -p docker/GeoLite2/
-          wget -O docker/GeoLite2/GeoLite2-ASN.mmdb  https://github.com/1c3z/arl_files/raw/master/GeoLite2-ASN.mmdb
-          wget -O docker/GeoLite2/GeoLite2-City.mmdb  https://github.com/1c3z/arl_files/raw/master/GeoLite2-City.mmdb
-          ls -al docker/GeoLite2
-
-      - name: Download ncrack
-        run: |
-          wget -O docker/ncrack  https://github.com/1c3z/arl_files/raw/master/ncrack
-          wget -O docker/ncrack-services https://github.com/1c3z/arl_files/raw/master/ncrack-services
-          chmod +x docker/ncrack
-
-      - name: Download NPoC
-        run: |
-          git clone https://github.com/1c3z/ARL-NPoC docker/ARL-NPoC
-
       # Runs a single command using the runners shell
       - name: Login Registry
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Pull amd64 image
+        run: docker pull ${IMAGE_URL}:${{ github.sha }}
+
+      - name: Pull arm image
+        run: docker pull ${IMAGE_URL}:arm-${{ github.sha }}
+
       # Runs a set of commands using the runners shell
-      - name: Build Docker image
+      - name: Create Docker manifest
         run: |
-          docker build -t ${IMAGE_URL}:${GITHUB_SHA} -f docker/worker/Dockerfile .
+          VERSION=$(cat version.txt)
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker manifest create ${IMAGE_URL}:latest-tmp \
+            --amend ${IMAGE_URL}:arm-${VERSION} \
+            --amend ${IMAGE_URL}:${VERSION}
+
+          docker manifest create ${IMAGE_URL}:${VERSION} \
+                      --amend ${IMAGE_URL}:arm-${VERSION} \
+                      --amend ${IMAGE_URL}:${VERSION}
+
 
       - name: Publish
         run: |
-          VERSION=$(cat version.txt)
-          docker push ${IMAGE_URL}:${VERSION}
+          docker manifest push $DOCKERHUB_USERNAME/$IMAGE_REPO_NAME:$VERSION
+          docker manifest push $DOCKERHUB_USERNAME/$IMAGE_REPO_NAME:latest
 
 

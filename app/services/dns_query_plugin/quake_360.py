@@ -20,11 +20,16 @@ class Query(DNSQueryBase):
 
     def sub_domains(self, target):
         # 文档 https://quake.360.net/quake/#/help?id=5e77423bcb9954d2f8a01656&title=%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E
-        json_data = {"query": "domain:{}".format(target), "start": 0, "size": self.max_size}
+        json_data = {
+            "query": "domain:\"{}\"".format(target),
+            "start": 0,
+            "size": self.max_size,
+            "latest": True
+        }
         headers = {
             "X-QuakeToken": self.quake_token
         }
-        conn = utils.http_req(self.api_url, 'post', json=json_data, headers=headers, timeout=(30.1, 50.1))
+        conn = utils.http_req(self.api_url, 'post', json=json_data, headers=headers, timeout=(30.1, 100.1))
         if conn.status_code != 200:
             raise Exception("{}: {} QuakeToken is invalid".format(self.source_name, self.quake_token))
 

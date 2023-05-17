@@ -46,19 +46,9 @@ jobs:
         run: |
           DOCKER_IMAGE=tophant/arl
           DOCKER_PLATFORMS=linux/arm64
-          VERSION=arm-latest-${GITHUB_SHA}
-
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          fi
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            VERSION=nightly
-          fi
+          VERSION=arm-$(cat version.txt)
 
           TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
-          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
-          fi
 
           echo ::set-output name=docker_image::${DOCKER_IMAGE}
           echo ::set-output name=version::${VERSION}

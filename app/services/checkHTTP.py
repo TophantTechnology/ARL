@@ -1,5 +1,3 @@
-import threading
-import collections
 import time
 
 from app import utils
@@ -25,7 +23,7 @@ class CheckHTTP(BaseThread):
                 return None
 
         # *** 特殊情况过滤
-        if conn.status_code == 422:
+        if conn.status_code == 422 or conn.status_code == 410:
             return None
 
         if (conn.status_code >= 501) and (conn.status_code < 600):
