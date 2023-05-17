@@ -62,7 +62,7 @@ WORKDIR /opt/ARL-NPoC/
 RUN pip3 install -r requirements.txt
 
 ## 安装nuclei
-RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.9.4/nuclei_2.9.4_linux_amd64.zip
+RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.9.4/nuclei_2.9.4_linux_arm64.zip
 RUN unzip nuclei_2.9.4_linux_arm64.zip && mv nuclei /usr/bin/ && rm -f nuclei_2.9.4_linux_arm64.zip
 RUN nuclei
 
