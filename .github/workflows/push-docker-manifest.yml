@@ -26,34 +26,34 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@master
 
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v1
+
       # Runs a single command using the runners shell
       - name: Login Registry
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Pull amd64 image
-        run: docker pull ${IMAGE_URL}:${{ github.sha }}
-
-      - name: Pull arm image
-        run: docker pull ${IMAGE_URL}:arm-${{ github.sha }}
-
-      # Runs a set of commands using the runners shell
-      - name: Create Docker manifest
+      - name: Pull images
         run: |
-          VERSION=$(cat version.txt)
           export DOCKER_CLI_EXPERIMENTAL=enabled
-          docker manifest create ${IMAGE_URL}:latest-tmp \
+          docker pull ${IMAGE_URL}:$(cat version.txt)
+          docker pull ${IMAGE_URL}:arm-$(cat version.txt)
+
+      - name: Create and publish Docker manifests
+        run: |
+          export VERSION=$(cat version.txt)
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+
+          docker manifest create ${IMAGE_URL}:latest \
             --amend ${IMAGE_URL}:arm-${VERSION} \
             --amend ${IMAGE_URL}:${VERSION}
 
           docker manifest create ${IMAGE_URL}:${VERSION} \
-                      --amend ${IMAGE_URL}:arm-${VERSION} \
-                      --amend ${IMAGE_URL}:${VERSION}
+            --amend ${IMAGE_URL}:arm-${VERSION} \
+            --amend ${IMAGE_URL}:${VERSION}
 
-
-      - name: Publish
-        run: |
-          docker manifest push $DOCKERHUB_USERNAME/$IMAGE_REPO_NAME:$VERSION
-          docker manifest push $DOCKERHUB_USERNAME/$IMAGE_REPO_NAME:latest
+          docker manifest push ${IMAGE_URL}:${VERSION}
+          docker manifest push ${IMAGE_URL}:latest
 
 
