@@ -7,6 +7,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+
+env:
+  IMAGE_URL: tophant/arl
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -18,6 +22,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@master
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Download GeoLite2
         run: |
@@ -31,53 +41,24 @@ jobs:
         run: |
           git clone https://github.com/1c3z/ARL-NPoC docker/ARL-NPoC
 
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v3
-        with:
-          buildx-version: latest
-          qemu-version: latest
-
-      - name: Available platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
-
-      - name: Prepare
-        id: prepare
-        run: |
-          DOCKER_IMAGE=tophant/arl
-          DOCKER_PLATFORMS=linux/arm64
-          VERSION=arm-$(cat version.txt)
-
-          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
-
-          echo ::set-output name=docker_image::${DOCKER_IMAGE}
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
-            --build-arg VERSION=${VERSION} \
-            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-            --build-arg VCS_REF=${GITHUB_SHA::8} \
-            ${TAGS} --file ./docker/ARMWorker/Dockerfile ./
-
-      - name: Docker Buildx (build)
-        run: |
-          pwd
-          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
-
-      - name: Login to DockerHub
-        if: success() && github.event_name != 'pull_request'
-        uses: docker/login-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Docker Buildx (push)
-        if: success() && github.event_name != 'pull_request'
-        run: |
-          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
 
-      - name: Inspect image
-        if: always() && github.event_name != 'pull_request'
+      - name: Build ARM64 image and push
         run: |
-          docker buildx imagetools inspect ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+          VERSION=$(cat version.txt)
+
+          docker buildx build --file ./docker/ARMWorker/Dockerfile \
+            --platform linux/arm64/v8 \
+            --output type=docker \
+            --tag ${IMAGE_URL}:arm-${VERSION} .
+
+          docker push ${IMAGE_URL}:arm-${VERSION}
+
+          docker buildx imagetools inspect ${IMAGE_URL}:arm-${VERSION}
 
 
